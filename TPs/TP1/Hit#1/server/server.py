@@ -1,7 +1,7 @@
 # Servidor TCP (B)
 import socket
 
-HOST = '127.0.0.1'  # Escucha en localhost
+HOST = '0.0.0.0'  # Escucha en localhost
 PORT = 65432        # Puerto de escucha
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:

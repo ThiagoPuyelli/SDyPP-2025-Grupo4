@@ -1,7 +1,7 @@
 # Cliente TCP (A)
 import socket
 
-HOST = '127.0.0.1'  # Dirección del servidor
+HOST = 'tcp_server'  # Dirección del servidor
 PORT = 65432        # Mismo puerto que el servidor
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
