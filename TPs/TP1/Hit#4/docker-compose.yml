@@ -1,0 +1,26 @@
+services:
+  nodo1:
+    build: .
+    container_name: nodo1
+    networks:
+      - red_comun
+    environment:
+      - SERVER_IP=nodo1
+      - SERVER_PORT=65432
+      - CLIENT_IP=nodo2
+      - CLIENT_PORT=65433
+
+  nodo2:
+    build: .
+    container_name: nodo2
+    networks:
+      - red_comun
+    environment:
+      - SERVER_IP=nodo2
+      - SERVER_PORT=65433
+      - CLIENT_IP=nodo1
+      - CLIENT_PORT=65432
+
+networks:
+  red_comun:
+    driver: bridge
