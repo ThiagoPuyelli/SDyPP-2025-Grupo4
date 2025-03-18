@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./server/server.dockerfile
+    container_name: tcp_server
+    ports:
+      - "65432:65432"
+    restart: "always"
+
+  client:
+    build:
+      context: .
+      dockerfile: ./client/client.dockerfile
+    container_name: tcp_client
+    depends_on:
+      - server
+    restart: "always"
