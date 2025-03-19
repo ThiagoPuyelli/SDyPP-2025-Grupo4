@@ -1,5 +1,5 @@
-# Dockerfile para el cliente
+# Dockerfile.client
 FROM python:3.9
 WORKDIR /app
-COPY client/client.py .
+COPY client.py .
 CMD ["python", "client.py"]

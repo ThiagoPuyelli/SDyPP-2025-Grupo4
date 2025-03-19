@@ -1,35 +1,41 @@
 import socket
+import sys
 import time
 
-HOST = 'tcp_server'  # Dirección del servidor
-PORT = 65432         # Mismo puerto que el servidor
+if len(sys.argv) < 2:
+    print("Uso: python client.py <IP_SERVIDOR>")
+    sys.exit(1)
 
-def conectar():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+HOST = sys.argv[1]  # IP del servidor recibida como argumento
+PORT = 12345
+
+def conectar_servidor():
+    """Intenta conectarse al servidor con reintentos en caso de fallo."""
+    while True:
         try:
-            # Intentar conectar al servidor
-            print("Intentando conectar al servidor...", flush=True)
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((HOST, PORT))
-            print("Conexión exitosa al servidor", flush=True)
-            
-            client_socket.sendall(b"Hola, servidor!")
-            print("Mensaje enviado al servidor", flush=True)
-            
-            data = client_socket.recv(1024).decode()
-            if data:
-                print(f"Servidor responde: {data}", flush=True)
-            else:
-                print("No se recibió respuesta del servidor.", flush=True)
-        except ConnectionRefusedError:
-            print("No se pudo conectar al servidor. Intentando nuevamente...", flush=True)
-            return False
-        return True
+            print("Conectado al servidor.")
+            return client_socket
+        except (socket.error, ConnectionRefusedError):
+            print("No se pudo conectar al servidor. Reintentando en 3 segundos...")
+            time.sleep(3)
 
-# Intentar conectarse
-if not conectar():
-    # Esperar un momento antes de reconectar
-    time.sleep(2)
+client_socket = conectar_servidor()
 
-# Reintentar la conexión después de que el servidor cierre la conexión
-if not conectar():
-    print("El servidor no está disponible después de varios intentos.", flush=True)
+while True:
+    message = input("> ")
+    if message.lower() == "salir":
+        break
+
+    try:
+        client_socket.sendall(message.encode())
+        data = client_socket.recv(1024)
+        print(f"Servidor respondió: {data.decode()}")
+        break
+    except (socket.error, ConnectionResetError, BrokenPipeError):
+        print("Conexión perdida. Intentando reconectar...")
+        client_socket.close()
+        client_socket = conectar_servidor()
+
+client_socket.close()
