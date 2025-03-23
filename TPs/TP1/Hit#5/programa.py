@@ -27,11 +27,11 @@ def manejar_cliente(conn, addr):
                     print("❌ Cliente desconectado.")
                     break
                 mensaje_json = json.loads(data.decode())
-                print(f"📩 Mensaje recibido de {addr}: {mensaje_json}")
+                print(f"📩 Mensaje recibido de {addr}: {mensaje_json['mensaje']}")
 
                 respuesta = {
                     "tipo": "respuesta",
-                    "mensaje": "Hola desde el servidor!"
+                    "mensaje": "Recibido!"
                 }
                 conn.sendall(json.dumps(respuesta).encode())
 
@@ -67,7 +67,7 @@ def cliente(ip_destino, puerto_destino):
             client_socket.sendall(json.dumps(mensaje_json).encode())
             data = client_socket.recv(1024)
             respuesta_json = json.loads(data.decode())
-            print(f"📩 Respuesta del servidor: {respuesta_json}")
+            print(f"📩 Respuesta del servidor: {respuesta_json['mensaje']}")
         except (socket.error, ConnectionResetError, BrokenPipeError, json.JSONDecodeError):
             print("⚠️ Conexión perdida o mensaje inválido. Reintentando...")
             client_socket.close()
