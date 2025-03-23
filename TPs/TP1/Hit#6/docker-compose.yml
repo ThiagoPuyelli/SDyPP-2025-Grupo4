@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  nodo_c:
+    build: ./C/
+    networks:
+      - red_d
+    # container_name: nodo_c
+    # ports:
+    #   - "65432:65432"
+    # restart: "always"
+
+  registro_d:
+    build: ./D/
+    networks:
+      - red_d
+
+networks:
+  red_d:
+    driver: bridge
