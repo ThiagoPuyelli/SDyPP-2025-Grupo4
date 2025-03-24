@@ -7,8 +7,6 @@ import sys
 
 conexiones_activas = {}
 
-s = None    # variable para el socket
-
 def servidor_nodo(mi_ip, mi_puerto):
     def manejar_cliente(conn, addr):
         with conn:
@@ -42,24 +40,18 @@ def servidor_nodo(mi_ip, mi_puerto):
 def obtener_puerto_aleatorio():
     return random.randint(30000, 60000)
 
-def obtener_conexion(ip_d, puerto_d):
-    global s
-    if s is None:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((ip_d, puerto_d))
-    return s
-
 def registrar_con_d(ip_d, puerto_d, mi_ip, mi_puerto):
     try:
-        s = obtener_conexion(ip_d, puerto_d)  # Obtener la conexión persistente
-        mensaje = {
-            "ip": mi_ip,
-            "puerto": mi_puerto
-        }
-        s.sendall(json.dumps(mensaje).encode())
-        data = s.recv(4096)
-        lista_nodos = json.loads(data.decode())
-        return lista_nodos
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((ip_d, puerto_d))
+            mensaje = {
+                "ip": mi_ip,
+                "puerto": mi_puerto
+            }
+            s.sendall(json.dumps(mensaje).encode())
+            data = s.recv(4096)
+            lista_nodos = json.loads(data.decode())
+            return lista_nodos
     except Exception as e:
         print(f"❌ Error al registrar con D: {e}")
         return []
@@ -86,12 +78,6 @@ def mostrar_menu():
     print("3. Enviar mensaje global (a todos)")
     print("4. Salir")
     return input("Selecciona una opción: ").strip()
-
-def cerrar_conexion():
-    global s
-    if s is not None:
-        s.close()
-        s = None
 
 def obtener_nodos_actualizados(ip_d, puerto_d, mi_ip, mi_puerto):
     nodos = registrar_con_d(ip_d, puerto_d, mi_ip, mi_puerto)
@@ -198,7 +184,6 @@ if __name__ == "__main__":
             mensaje = input("Mensaje global: ")
             enviar_mensaje_global(ip_d, puerto_d, mi_ip, mi_puerto, mensaje)
         elif opcion == "4":
-            cerrar_conexion()
             print("👋 Cerrando nodo...")
             break
         else:
