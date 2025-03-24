@@ -3,7 +3,7 @@ services:
   nodo_c:
     build: ./C/
     networks:
-      - red_d
+      - red_e
     # container_name: nodo_c
     # ports:
     #   - "65432:65432"
@@ -12,8 +12,8 @@ services:
   registro_d:
     build: ./D/
     networks:
-      - red_d
+      - red_e
 
 networks:
-  red_d:
+  red_e:
     driver: bridge
