@@ -10,35 +10,35 @@ Para simplificar el problema, imagine que D lleva dos registros, un listado de l
 
 - Creamos un volumen en docker para almacenar los logs del ejercicio
 
-docker volume create logs_volume
+docker volume create logs_hit7
 
 # Se crea una red
 
 - Creamos una red para el ejercicio
 
-sudo docker network create red_e
+docker network create red_e
 
 # Generamos las imagenes del programa
 
 - Construimos las imagenes del programa en un docker-compose
 
-sudo docker-compose build
+docker-compose build
 
 # Iniciamos el registro "D"
 
 - Al codigo por parametro se le proporciona su propia ip y se lo asigna a la red que creamos llamada red_d, ademas lo levantamos con el volumen de logs montado
 
-sudo docker run -it --rm --network red_d --name registro_d -v logs_volume:/app/logs hit7-registro_d 0.0.0.0 5000
+docker run -it --rm --network red_d --name registro_d -v logs_hit7:/app/logs hit7-registro_d 0.0.0.0 5000
 
 # Y los subsecuentes nodos "C"
 
 - Al codigo por parametro se le proporciona la ip y puerto del registro_d, no le asignamos un nombre para poder correr el comando multiples veces
 
-sudo docker run -it --rm --network red_d hit7-nodo_c registro_d 5000
+docker run -it --rm --network red_d hit7-nodo_c registro_d 5000
 
 # Accedemos a los logs
 
 - Para poder ver el archivo de logs, creamos un contenedor temporal
 
-sudo docker run --rm -v logs_volume:/app/logs busybox cat /app/logs/application.log
+docker run --rm -v logs_hit7:/app/logs busybox cat /app/logs/application.log
 
