@@ -23,10 +23,10 @@ sudo docker-compose build
 
 - Al codigo por parametro se le proporciona su propia ip y se lo asigna a la red que creamos llamada red_d
 
-sudo docker run -it --rm --network red_d --name registro_d hit6-registro_d 0.0.0.0 5000
+sudo docker run -it --rm --network red_d --name registro_d hit6_registro_d 0.0.0.0 5000
 
 # Y los subsecuentes nodos "C"
 
 - Al codigo por parametro se le proporciona la ip y puerto del registro_d, no le asignamos un nombre para poder correr el comando multiples veces
 
-sudo docker run -it --rm --network red_d hit6-nodo_c registro_d 5000
+sudo docker run -it --rm --network red_d hit6_nodo_c registro_d 5000

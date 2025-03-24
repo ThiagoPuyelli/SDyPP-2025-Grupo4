@@ -28,13 +28,13 @@ docker-compose build
 
 - Al codigo por parametro se le proporciona su propia ip y se lo asigna a la red que creamos llamada red_d, ademas lo levantamos con el volumen de logs montado
 
-docker run -it --rm --network red_d --name registro_d -v logs_hit7:/app/logs hit7-registro_d 0.0.0.0 5000
+docker run -it --rm --network red_d --name registro_d -v logs_hit7:/app/logs hit7_registro_d 0.0.0.0 5000
 
 # Y los subsecuentes nodos "C"
 
 - Al codigo por parametro se le proporciona la ip y puerto del registro_d, no le asignamos un nombre para poder correr el comando multiples veces
 
-docker run -it --rm --network red_d hit7-nodo_c registro_d 5000
+docker run -it --rm --network red_d hit7_nodo_c registro_d 5000
 
 # Accedemos a los logs
 
