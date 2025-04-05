@@ -1,0 +1,19 @@
+services:
+  servidor:
+    image: servidor
+    build: ./servidor/
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "5000:5000"
+  cliente:
+    build:
+      context: ./cliente
+    depends_on:
+      - servidor
+
+
+
+  # tarea_generica:
+  #   image: tarea_generica
+  #   build: ./tarea_generica/
