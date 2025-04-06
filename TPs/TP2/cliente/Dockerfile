@@ -2,8 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY cliente.py .
+COPY . .
 
-RUN pip install requests
+RUN pip install --no-cache-dir -r requirements.txt
 
 CMD ["python", "cliente.py"]

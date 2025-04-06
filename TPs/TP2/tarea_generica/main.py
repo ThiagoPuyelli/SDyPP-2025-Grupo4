@@ -1,7 +1,12 @@
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, Any
-import tareas  # módulo con funciones definidas por el cliente
+import importlib
+
+try:
+    tareas = importlib.import_module("tareas")
+except ModuleNotFoundError:
+    tareas = None
 
 app = FastAPI()
 
@@ -11,6 +16,9 @@ class TareaPayload(BaseModel):
 
 @app.post("/ejecutarTarea")
 def ejecutar_tarea(payload: TareaPayload):
+    if tareas is None:
+        raise HTTPException(status_code=500, detail="El módulo 'tareas' no fue encontrado.")
+
     nombre_funcion = payload.tarea
     parametros = payload.parametros
 

@@ -1,53 +1,33 @@
-# Ejecutar:
-docker-compose up --build --force-recreate --remove-orphans
-docker compose  run --rm cliente
+# Instrucciones para ejecutar:
+### Correr por unica vez:
+Crea una red global en docker para poder comunicarse con la tarea
+> docker network create --driver bridge --attachable tarea-net
+
+### Levantar Servidor
+> docker-compose up servidor
+
+### Correr cliente de consola (tambien se puede realizar con curl)
+> docker-compose run --rm cliente
+
+### Ejemplo en powershell:  
+> Invoke-RestMethod -Uri "http://localhost:5000/getRemoteTask" -Method POST -Headers @{ "Content-Type" = "application/json" } -Body '{ "credenciales": null, "imagen": "matiasherrneder/tarea-cliente:latest", "tarea": "sumar", "parametros": { "x": 2, "y": 3 } }'
+
+# Credenciales
+En caso de no usar el cliente se necesitara encriptar las credenciales antes de ponerlas en el json
+
+### Clave publica del servidor:
+> -----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQ61E7I5hKBqbsqt48sY
+hmkEdFZGxyPUMPSOd08nlBLLcSCnHJzEAX7TtdSgj/rX+pEzOs/tsPPAdraNRSVk
+iOgZ2vd7+cQkxmQvehZbxzNExwN+I81efDjlzOM0p3Oucg8ZmEbJJOZ7ohngDPsI
+EGqB8vo7nhmq93b1eOuaOgUDsoqfN4ubkW3H9SD3LIgdBDDVn+xptWoF0LKSS9k9
+8Wb2j3HHdNHdXmbMx37WEEaRcSxBGow6tNPl6SmsbbWQQWEhnbSGRKMRyBnOmUfr
+mh8M5pYIU3poK6zmIIKMj0GQmTHm5ZOnwAgUGPR+cg71l8R9Gru4fIBhhokmRPpt
+wwIDAQAB
+-----END PUBLIC KEY-----
 
 
+### Usuario en Docker Hub para pruebas: 
+>* user: testsdunlu
+>* pass: estoesuntest
 
-
-
-# mockups
-
-Tp2: 
-
-JSON cliente -> servidor: 
-
-Credenciales docker hub 
-
-Imagen
-
-JSON servidor -> tarea: 
-
-Tarea 
-
-Parametros 
-
-X 
-
-X 
-
- 
-
- 
-
- 
-
-SERVICIO TAREA 
-
- 
-
-HTTP -> ejecutarTarea() { 
-
-    Json[0] == "tarea1": tarea1() 
-
-    Json[0] == "tarea2": tarea2() 
-
-} 
-
- 
-
-tarea1(){ 
-
-
-
-}

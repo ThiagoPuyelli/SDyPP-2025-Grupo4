@@ -6,14 +6,17 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "5000:5000"
+    networks:
+      - tarea-net
   cliente:
     build:
       context: ./cliente
     depends_on:
       - servidor
+    networks:
+      - tarea-net
 
-
-
-  # tarea_generica:
-  #   image: tarea_generica
-  #   build: ./tarea_generica/
+networks:
+  tarea-net:
+    driver: bridge
+    external: true
