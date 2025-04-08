@@ -3,6 +3,9 @@ import time
 import json
 
 def medir_respuesta_http(url, intentos=5, intervalo=1):
+    intentos = int(intentos)
+    intervalo = float(intervalo)
+    
     resultados = {
         "url": url,
         "intentos": intentos,

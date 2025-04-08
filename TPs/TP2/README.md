@@ -40,7 +40,9 @@ wwIDAQAB
 -----END PUBLIC KEY-----
 
 
-### Usuario en Docker Hub para pruebas: 
+### Usuario en Docker Hub para pruebas (repo privado): 
 >* user: testsdunlu
 >* pass: estoesuntest
+>* imagen: testsdunlu/cliente_privado:latest
+>* funcion: medir_respuesta_http(url, intentos, intervalo)
 
