@@ -12,6 +12,19 @@ Crea una red global en docker para poder comunicarse con la tarea
 ### Ejemplo en powershell:  
 > Invoke-RestMethod -Uri "http://localhost:5000/getRemoteTask" -Method POST -Headers @{ "Content-Type" = "application/json" } -Body '{ "credenciales": null, "imagen": "matiasherrneder/tarea-cliente:latest", "tarea": "sumar", "parametros": { "x": 2, "y": 3 } }'
 
+### Ejemplo usando curl:
+> curl -X POST http://localhost:5000/getRemoteTask \
+> -H "Content-Type: application/json" \
+> -d '{
+>   "credenciales": null,
+>   "imagen": "matiasherrneder/tarea-cliente:latest",
+>   "tarea": "sumar",
+>   "parametros": {
+>     "x": 2,
+>     "y": 3
+>   }
+> }'
+
 # Credenciales
 En caso de no usar el cliente se necesitara encriptar las credenciales antes de ponerlas en el json
 
