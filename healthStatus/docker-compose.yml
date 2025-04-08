@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+    container_name: server-health
+    ports:
+      - "8004:8004"
+
+  health:
+    build:
+      context: ./health
+    container_name: health
+    depends_on:
+      - server
