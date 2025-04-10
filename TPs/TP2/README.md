@@ -7,7 +7,10 @@
 
 ## Imagenes disponibles en Docker Hub
 - **Servidor:** matiasherrneder/servidor-tareas:latest
-- **Tarea generica:** matiasherrneder/servidor-tareas:latest
+- **Tarea generica:** matiasherrneder/tarea-generica:latest
+- **Cliente:** matiasherrneder/cliente-tareas:latest
+- **Img ejemplo publica:** matiasherrneder/tarea-cliente:latest
+- **Img ejemplo privada:** testsdunlu/cliente_privado:latest
 
 ## Instrucciones para ejecutar el servidor:
 ### Crear una red global en docker para comunicarse con la tarea
