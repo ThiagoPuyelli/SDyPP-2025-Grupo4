@@ -73,7 +73,7 @@ def ejecutar_tarea_remota(tarea: TareaRequest):
             raise HTTPException(status_code=500, detail=f"Error de Docker: {str(api_err)}")
 
         # Esperar que se levante
-        time.sleep(2)
+        time.sleep(3)
         container.reload()
 
         # Armar request
@@ -83,15 +83,19 @@ def ejecutar_tarea_remota(tarea: TareaRequest):
             "parametros": tarea.parametros or {}
         }
 
-        # Reintentar conexión
-        for _ in range(10):
+        # Intentar conexión
+        espera_backoff = 3
+        while True:
             try:
-                response = requests.post(url, json=payload, timeout=3)
+                response = requests.post(url, json=payload, timeout=espera_backoff)
                 if response.ok:
                     return response.json()
             except requests.RequestException as e:
                 print(f"Error: {e}", flush=True)
-                time.sleep(1)
+                time.sleep(espera_backoff)
+                espera_backoff = min(espera_backoff*2, 30)
+                if espera_backoff >= 60:
+                    break
 
         # Si no responde
         raise HTTPException(status_code=504, detail="Timeout esperando respuesta de la tarea")

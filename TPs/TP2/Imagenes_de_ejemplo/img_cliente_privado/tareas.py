@@ -1,6 +1,5 @@
 import requests
 import time
-import json
 
 def medir_respuesta_http(url, intentos=5, intervalo=1):
     intentos = int(intentos)
@@ -40,7 +39,7 @@ def medir_respuesta_http(url, intentos=5, intervalo=1):
         promedio = sum(tiempos) / len(tiempos)
         resultados["promedio_ms"] = round(promedio, 2)
 
-    return json.dumps(resultados, indent=4)
+    return resultados
 
 def echo(e):
     return e
