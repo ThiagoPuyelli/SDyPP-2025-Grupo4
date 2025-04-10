@@ -93,9 +93,9 @@ def ejecutar_tarea_remota(tarea: TareaRequest):
             except requests.RequestException as e:
                 print(f"Error: {e}", flush=True)
                 time.sleep(espera_backoff)
-                espera_backoff = min(espera_backoff*2, 30)
-                if espera_backoff >= 60:
+                if espera_backoff >= 30:
                     break
+                espera_backoff = min(espera_backoff*2, 30)
 
         # Si no responde
         raise HTTPException(status_code=504, detail="Timeout esperando respuesta de la tarea")
