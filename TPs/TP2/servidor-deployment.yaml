@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servidor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: servidor
+  template:
+    metadata:
+      labels:
+        app: servidor
+    spec:
+      containers:
+        - name: servidor
+          image: testsdunlu/servidor:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: NGROK_AUTHTOKEN
+              value: "2vZDU3BXpjAHwSTQMUJ41ws1Wlh_DHoJDuVv1mSSYiTyfipo"
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

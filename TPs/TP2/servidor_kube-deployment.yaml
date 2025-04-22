@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servidorkube
+  namespace: grupo4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: servidorkube
+  template:
+    metadata:
+      labels:
+        app: servidorkube
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: servidorkube
+          image: testsdunlu/servidor_kube:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: NGROK_AUTHTOKEN
+              value: "2vZDU3BXpjAHwSTQMUJ41ws1Wlh_DHoJDuVv1mSSYiTyfipo"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

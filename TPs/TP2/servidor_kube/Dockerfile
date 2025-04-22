@@ -14,10 +14,12 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiamos el script de inicio
+# Creamos usuario no-root con UID fijo
+RUN useradd -u 1001 -m appuser
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 5000
-
+USER 1001
 CMD ["/entrypoint.sh"]
