@@ -1,0 +1,10 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.crash/
+.terraform.lock.hcl
+
+# Credenciales sensibles
+credentials/*
+
