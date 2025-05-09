@@ -5,10 +5,12 @@ import json
 import time
 
 def apply_sobel_to_patch(ch, method, properties, body):#, patch, output_path="output", filename="sobel_result.jpg"):
+    #try:
     datos = json.loads(body.decode())
     output_path = datos.get('output_path')
     path = datos.get('path')
     filename = datos.get('filename')
+    id = datos.get('task_id')
     patch = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     
     os.makedirs(output_path, exist_ok=True)
@@ -24,6 +26,22 @@ def apply_sobel_to_patch(ch, method, properties, body):#, patch, output_path="ou
 
     # Guardar la imagen
     cv2.imwrite(full_output_path, sobel_result)
+
+    message = json.dumps({
+            "task_id": id,
+            "result": True
+        })
+
+    ch.basic_publish(
+        exchange='',
+        routing_key='reply-sobel',
+        body=message
+    )
+    #ch.basic_ack(delivery_tag=method.delivery_tag)
+    #except Exception as e:
+    #    print(f"[ERROR] Falló el procesamiento del patch: {e}")
+    #    # O podrías re-publicarlo en una cola de errores si querés
+    #    ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 credentials = pika.PlainCredentials('user', 'password')
 for attempt in range(10):
@@ -51,6 +69,8 @@ channel.queue_declare(queue='sobel')
 channel.basic_consume(queue='sobel',
                       on_message_callback=apply_sobel_to_patch,
                       auto_ack=True)
+                      
+channel.queue_declare(queue='reply-sobel')
 
 print('[Consumidor] Esperando mensajes. Ctrl+C para salir.')
 channel.start_consuming()
