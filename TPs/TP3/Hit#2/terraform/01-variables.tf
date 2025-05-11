@@ -15,11 +15,11 @@ variable "credentials_file_path" {
 
 variable "project_id" {
   type    = string
-  default = "automatic-rock-458016-q2"
+  default = "sd-2025-459518"
 }
 
 variable "cluster_name" {
   type        = string
   description = "Nombre del cluster de Kubernetes"
-  default     = "sd-cluster"
+  default     = "sdeath-cluster"
 }

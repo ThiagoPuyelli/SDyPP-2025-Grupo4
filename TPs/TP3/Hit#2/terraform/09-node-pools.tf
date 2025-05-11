@@ -14,13 +14,13 @@ resource "google_container_node_pool" "general" {
 
   autoscaling {
     min_node_count = 1
-    max_node_count = 3
+    max_node_count = 2
   }
 
   node_config {
     preemptible  = false
     machine_type = "e2-medium"
-    disk_size_gb = 10 # ✅ Set disk size to 10 GB
+    disk_size_gb = 20
 
     labels = {
       role = "general"
@@ -45,13 +45,13 @@ resource "google_container_node_pool" "spot" {
 
   autoscaling {
     min_node_count = 1
-    max_node_count = 5
+    max_node_count = 3
   }
 
   node_config {
     preemptible  = true
     machine_type = "e2-medium"
-    disk_size_gb = 10 # ✅ Set disk size to 10 GB
+    disk_size_gb = 20
 
     labels = {
       team = "devops"
