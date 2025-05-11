@@ -4,6 +4,7 @@ import pika
 import json
 import time
 import numpy as np
+import requests
 from google.cloud import storage
 
 client = storage.Client()
@@ -44,6 +45,20 @@ def apply_sobel_to_patch(ch, method, properties, body):#, patch, output_path="ou
 
     # Guardar la imagen
     upload_image_gcp(sobel_result, task_id + '/r' + str(n_image) + '.jpg')
+
+    base_url = "http://joiner:8002/join"
+
+    params = {
+        "task_id": task_id,
+        "n_parts": n_parts,
+        "n_image": n_image
+    }
+    
+    response = requests.get(base_url, params=params)
+        
+    while (response.status_code != 200):
+        time.sleep(5)
+        response = requests.get(base_url, params=params)
     #ch.basic_ack(delivery_tag=method.delivery_tag)
     #except Exception as e:
     #    print(f"[ERROR] Falló el procesamiento del patch: {e}")

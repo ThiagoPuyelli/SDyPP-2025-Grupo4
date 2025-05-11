@@ -14,7 +14,7 @@ COPY . .
 RUN pip install --no-cache-dir fastapi uvicorn pika opencv-python numpy google-cloud-storage redis
 
 # Expone el puerto donde correrá FastAPI
-EXPOSE 8001
+EXPOSE 8002
 
 # Comando para ejecutar FastAPI
 CMD ["python", "joiner.py"]
