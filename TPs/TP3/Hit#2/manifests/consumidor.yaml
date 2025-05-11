@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumidor
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: consumidor
+  template:
+    metadata:
+      labels:
+        app: consumidor
+    spec:
+      nodeSelector:
+        team: devops
+      containers:
+      - name: consumidor
+        image: docker.io/thiagopuyelli/consumidor_sobel:latest
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: consumidor-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: consumidor
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60

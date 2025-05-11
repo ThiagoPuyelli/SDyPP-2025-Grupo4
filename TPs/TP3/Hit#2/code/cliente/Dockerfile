@@ -11,10 +11,10 @@ RUN mkdir /app/img
 COPY . .
 
 # Instala dependencias
-RUN pip install --no-cache-dir fastapi uvicorn pika opencv-python numpy
+RUN pip install --no-cache-dir fastapi uvicorn pika opencv-python numpy google-cloud-storage
 
 # Expone el puerto donde correrá FastAPI
 EXPOSE 8000
 
 # Comando para ejecutar FastAPI
-CMD ["uvicorn", "sobel:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "cliente:app", "--host", "0.0.0.0", "--port", "8000"]
