@@ -94,7 +94,7 @@ def sobel_return(image_id: str):
             "message": "Tu imagen no se encuentra en la base de datos"
         }
 
-    blob = bucket.blob(image_id)
+    blob = bucket.blob(image_id + '/result.jpg')
 
     image_stream = io.BytesIO()
     blob.download_to_file(image_stream)
@@ -104,7 +104,15 @@ def sobel_return(image_id: str):
     response = StreamingResponse(image_stream, media_type="image/jpeg")
 
     try:
-        blob.delete()
+        dir = list(bucket.list_blobs(prefix=image_id))
+        for b in dir:
+            b.delete()
+        
+        blob_virtual_folder = bucket.blob(image_id + '/')
+        if blob_virtual_folder.exists():
+            print(f"Eliminando objeto 'carpeta/' que representa la carpeta vacía...")
+            blob_virtual_folder.delete()
+
         print(f"[Servidor] Imagen {image_id} eliminada del bucket.")
     except Exception as e:
         print(f"[Servidor] Error al eliminar la imagen {image_id}: {e}")
