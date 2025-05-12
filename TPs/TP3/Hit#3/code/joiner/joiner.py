@@ -11,7 +11,7 @@ import time
 import re
 
 client = storage.Client()
-bucket = client.bucket("prueba-3fc1f.appspot.com")
+bucket = client.bucket("bucket_sobel2")
 
 app = FastAPI()
 
@@ -30,7 +30,8 @@ def join(task_id: str, n_parts: int, n_image: int):
     if len(keys) < n_parts - 1:
         r.set(f'{task_id}-{n_image}', str(n_parts))
         return {"result": True}
-    
+
+
     prefix = task_id + '/r'
     
     blobs = list(bucket.list_blobs(prefix=prefix))
@@ -48,6 +49,7 @@ def join(task_id: str, n_parts: int, n_image: int):
     
     result_img = np.vstack(parts)
     upload_image_gcp(result_img, task_id + '/result.jpg')
+    r.delete(*keys)
     return {"result": True}
 
 if __name__ == '__main__':

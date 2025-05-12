@@ -8,7 +8,7 @@ import requests
 from google.cloud import storage
 
 client = storage.Client()
-bucket = client.bucket("prueba-3fc1f.appspot.com")
+bucket = client.bucket("bucket_sobel2")
 
 def read_img_gcp(blob_path: str):
     blob = bucket.blob(blob_path)
@@ -30,48 +30,57 @@ def upload_image_gcp(img, destination_blob_name):
     blob.upload_from_string(encoded_image.tobytes(), content_type='image/jpg')
 
 def apply_sobel_to_patch(ch, method, properties, body):#, patch, output_path="output", filename="sobel_result.jpg"):
-    #try:
-    datos = json.loads(body.decode())
-    task_id = datos.get('task_id')
-    n_image = datos.get('n_image')
-    n_parts = datos.get('n_parts')
-    patch = read_img_gcp(task_id + '/p' + str(n_image) + '.jpg')
-
-    # Aplicar filtro Sobel
-    sobelx = cv2.Sobel(patch, cv2.CV_64F, 1, 0, ksize=3)
-    sobely = cv2.Sobel(patch, cv2.CV_64F, 0, 1, ksize=3)
-    sobel_combined = cv2.magnitude(sobelx, sobely)
-    sobel_result = cv2.convertScaleAbs(sobel_combined)
-
-    # Guardar la imagen
-    upload_image_gcp(sobel_result, task_id + '/r' + str(n_image) + '.jpg')
-
-    base_url = "http://joiner:8002/join"
-
-    params = {
-        "task_id": task_id,
-        "n_parts": n_parts,
-        "n_image": n_image
-    }
+    try:
+        datos = json.loads(body.decode())
+        task_id = datos.get('task_id')
+        n_image = datos.get('n_image')
+        n_parts = datos.get('n_parts')
+        patch = read_img_gcp(task_id + '/p' + str(n_image) + '.jpg')
     
-    response = requests.get(base_url, params=params)
+        # Aplicar filtro Sobel
+        sobelx = cv2.Sobel(patch, cv2.CV_64F, 1, 0, ksize=3)
+        sobely = cv2.Sobel(patch, cv2.CV_64F, 0, 1, ksize=3)
+        sobel_combined = cv2.magnitude(sobelx, sobely)
+        sobel_result = cv2.convertScaleAbs(sobel_combined)
+    
+        # Guardar la imagen
+        upload_image_gcp(sobel_result, task_id + '/r' + str(n_image) + '.jpg')
+    
         
-    while (response.status_code != 200):
-        time.sleep(5)
+        joiner_host = os.environ.get('JOINER_HOST', 'joiner') 
+        base_url = f"http://{joiner_host}:8002/join"
+    
+        params = {
+            "task_id": task_id,
+            "n_parts": n_parts,
+            "n_image": n_image
+        }
+        
         response = requests.get(base_url, params=params)
-    #ch.basic_ack(delivery_tag=method.delivery_tag)
+            
+        while (response.status_code != 200):
+            time.sleep(5)
+            response = requests.get(base_url, params=params)
+        
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    except Exception as e:
+        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+    #
     #except Exception as e:
     #    print(f"[ERROR] Falló el procesamiento del patch: {e}")
     #    # O podrías re-publicarlo en una cola de errores si querés
     #    ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
+rabbitmq_host = os.environ.get('RABBITMQ_HOST', 'rabbitmq') 
 credentials = pika.PlainCredentials('user', 'password')
 for attempt in range(10):
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host='rabbitmq',
+            host=rabbitmq_host,
             port=5672,
-            credentials=credentials
+            credentials=credentials,
+            heartbeat=20,
+            blocked_connection_timeout=60
         ))
         print("Conectado a RabbitMQ")
         break
@@ -90,10 +99,8 @@ channel.queue_declare(queue='sobel')
 # Escuchar los mensajes
 channel.basic_consume(queue='sobel',
                       on_message_callback=apply_sobel_to_patch,
-                      auto_ack=True)
+                      auto_ack=False)
                       
-channel.queue_declare(queue='reply-sobel')
-
 print('[Consumidor] Esperando mensajes. Ctrl+C para salir.')
 channel.start_consuming()
 
