@@ -1,0 +1,108 @@
+version: '3.9'
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # puerto para conexión AMQP
+      - "15672:15672"  # puerto para UI web de RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: "user"
+      RABBITMQ_DEFAULT_PASS: "password"
+      GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/prueba-3fc1f-b8f34eda9b2e.json"
+    networks:
+      - backend
+  
+  redis:
+    image: "redis/redis-stack:latest"
+    container_name: "redis"
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    networks:
+      - backend
+  
+  joiner:
+    build:
+      context: ./joiner
+      dockerfile: Dockerfile
+    container_name: joiner
+    ports:
+      - "8002:8002"  # expone FastAPI en este puerto
+    volumes:
+      - shared-data:/app/shared
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/prueba-3fc1f-b8f34eda9b2e.json"
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - backend
+    
+
+  cliente:
+    build:
+      context: ./cliente
+      dockerfile: Dockerfile
+    container_name: cliente
+    ports:
+      - "8000:8000"  # expone FastAPI en este puerto
+    volumes:
+      - shared-data:/app/shared
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/prueba-3fc1f-b8f34eda9b2e.json"
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+
+  consumidor1:
+    build:
+      context: ./consumidor
+      dockerfile: Dockerfile
+    container_name: consumidor1
+    volumes:
+      - shared-data:/app/shared
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/prueba-3fc1f-b8f34eda9b2e.json"
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+
+  consumidor2:
+    build:
+      context: ./consumidor
+      dockerfile: Dockerfile
+    container_name: consumidor2
+    volumes:
+      - shared-data:/app/shared
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/prueba-3fc1f-b8f34eda9b2e.json"
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+
+  consumidor3:
+    build:
+      context: ./consumidor
+      dockerfile: Dockerfile
+    container_name: consumidor3
+    volumes:
+      - shared-data:/app/shared
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/prueba-3fc1f-b8f34eda9b2e.json"
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+
+volumes:
+  shared-data:
+
+networks:
+  backend:
+    driver: bridge
