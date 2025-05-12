@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bucket-reader
+  namespace: default
+  annotations:
+    iam.gke.io/gcp-service-account: kubernetes@sd-2025-459518.iam.gserviceaccount.com

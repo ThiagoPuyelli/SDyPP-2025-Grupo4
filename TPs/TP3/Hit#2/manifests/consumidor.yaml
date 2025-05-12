@@ -12,6 +12,7 @@ spec:
       labels:
         app: consumidor
     spec:
+      serviceAccountName: bucket-reader  # Usa el KSA aquí
       nodeSelector:
         team: devops
       containers:

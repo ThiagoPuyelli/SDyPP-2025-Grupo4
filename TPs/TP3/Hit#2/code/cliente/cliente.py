@@ -16,7 +16,7 @@ app = FastAPI()
 credentials = pika.PlainCredentials('user', 'password')
 
 client = storage.Client()
-bucket = client.bucket("prueba-3fc1f.appspot.com")
+bucket = client.bucket("bucket_sobel")
 
 for attempt in range(10):
     try:

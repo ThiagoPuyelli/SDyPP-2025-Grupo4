@@ -12,6 +12,7 @@ spec:
       labels:
         app: joiner
     spec:
+      serviceAccountName: bucket-reader  # Usa el KSA aquí
       nodeSelector:
         role: general
       containers:
