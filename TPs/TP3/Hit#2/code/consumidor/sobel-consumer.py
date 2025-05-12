@@ -8,7 +8,7 @@ import requests
 from google.cloud import storage
 
 client = storage.Client()
-bucket = client.bucket("prueba-3fc1f.appspot.com")
+bucket = client.bucket("bucket_sobel")
 
 def read_img_gcp(blob_path: str):
     blob = bucket.blob(blob_path)

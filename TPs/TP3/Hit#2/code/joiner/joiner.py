@@ -11,7 +11,7 @@ import time
 import re
 
 client = storage.Client()
-bucket = client.bucket("prueba-3fc1f.appspot.com")
+bucket = client.bucket("bucket_sobel")
 
 app = FastAPI()
 
