@@ -7,4 +7,5 @@
 
 # Credenciales sensibles
 credentials/*
+cluster/credentials/
 

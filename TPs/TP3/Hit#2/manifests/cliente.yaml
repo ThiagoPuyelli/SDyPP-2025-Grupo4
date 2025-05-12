@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliente
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cliente
+  template:
+    metadata:
+      labels:
+        app: cliente
+    spec:
+      serviceAccountName: bucket-reader  # Usa el KSA aquí
+      nodeSelector:
+          role: general
+      containers:
+      - name: cliente
+        image: docker.io/thiagopuyelli/cliente_sobel:1.0
+        ports:
+        - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cliente
+spec:
+  selector:
+    app: cliente
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: LoadBalancer
