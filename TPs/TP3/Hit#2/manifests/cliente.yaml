@@ -17,7 +17,7 @@ spec:
           role: general
       containers:
       - name: cliente
-        image: docker.io/thiagopuyelli/cliente_sobel:latest
+        image: docker.io/thiagopuyelli/cliente_sobel:1.0
         ports:
         - containerPort: 8000
 

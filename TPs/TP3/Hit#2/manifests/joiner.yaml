@@ -17,7 +17,7 @@ spec:
         role: general
       containers:
       - name: joiner
-        image: docker.io/thiagopuyelli/joiner:latest
+        image: docker.io/thiagopuyelli/joiner:1.0
         ports:
         - containerPort: 8002
 
