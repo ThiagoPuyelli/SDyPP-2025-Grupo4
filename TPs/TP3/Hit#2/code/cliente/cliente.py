@@ -11,6 +11,7 @@ import json
 import time
 from fastapi.responses import StreamingResponse
 from google.cloud import storage
+import io
 
 app = FastAPI()
 credentials = pika.PlainCredentials('user', 'password')
@@ -76,14 +77,40 @@ def sobel_endpoint(image_url: str = Query(...), n_parts: int = Query(4)):
         apply = apply_sobel_partitioned(input_path, n_parts, id)
 
         return {
-            "message": apply if "Filtro en proceso" else "Fallo el filtro"
+            "message": "Recupera tu imagen en la siguiente url:",
+            "url": f"/get_image/{id}"
         }
 
     except Exception as e:
         if os.path.exists(input_path):
             os.remove(input_path)
         return {"error": str(e)}
+
+@app.get("/get_image/{image_id}")
+def sobel_return(image_id: str):
+    # Verificar si el archivo existe en el bucket
+    if not file_exist_gcp(image_id):
+        return {
+            "message": "Tu imagen no se encuentra en la base de datos"
+        }
+
+    blob = bucket.blob(image_id)
+
+    image_stream = io.BytesIO()
+    blob.download_to_file(image_stream)
     
+    image_stream.seek(0)
+
+    response = StreamingResponse(image_stream, media_type="image/jpeg")
+
+    try:
+        blob.delete()
+        print(f"[Servidor] Imagen {image_id} eliminada del bucket.")
+    except Exception as e:
+        print(f"[Servidor] Error al eliminar la imagen {image_id}: {e}")
+
+    return response  
+
 def file_exist_gcp(carpeta: str) -> bool:
     blobs = list(bucket.list_blobs(prefix=carpeta + "/"))
     return len(blobs) > 0
