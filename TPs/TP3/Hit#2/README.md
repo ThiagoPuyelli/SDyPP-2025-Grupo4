@@ -44,7 +44,7 @@ terraform apply
 
 ### Conectarse al cluster creado
 ```
-gcloud container clusters get-credentials $(terraform output -raw cluster_name) --region $(terraform output -raw region) --project $(terraform output -raw project_id)
+gcloud container clusters get-credentials sdeath-cluster --region us-east1-b --project sd-2025-459518
 ```
 
 ### Verificar conexion
@@ -53,14 +53,17 @@ kubectl get nodes
 ```
 
 ### Despliegue de las aplicaciones
-primero ejecutar el de las variables de entorno
 ```
-kubectl apply -f .
+kubectl apply -f ../manifests/.
 ```
 
-## Otros comandos
+## Recuperar ip del servidor
 ```
-gcloud container clusters list --project=tu-proyecto-id
-kubectl get pods
-kubectl get services
+kubectl get svc cliente
+```
+
+## Aplicar a una imagen en internet
+Con la ip del servidor:
+```
+http://34.75.184.36/sobel?image_url=https://imgs.search.brave.com/VyMDMutzQJTOYQZjnv9yhXb1NfyicOiLlexCkDe58KU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zMS5z/aWduaWZpY2Fkb3Mu/Y29tL2ZvdG8vaW1h/Z2VuLWluaWNpby1j/a2UuanBnP2NsYXNz/PWFydGljbGU
 ```
