@@ -17,7 +17,7 @@ spec:
         team: devops
       containers:
       - name: consumidor
-        image: docker.io/thiagopuyelli/consumidor_sobel:latest
+        image: docker.io/thiagopuyelli/consumidor_sobel:1.0
 
 ---
 apiVersion: autoscaling/v2
