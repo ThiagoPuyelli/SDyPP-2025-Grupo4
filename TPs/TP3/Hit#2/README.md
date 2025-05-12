@@ -1,3 +1,15 @@
+# Hit 2 Sobel con offloading en la nube ;) para construir una base elástica (elástica):
+Mismo objetivo de calcular sobel, pero ahora vamos a usar Terraform para construir nodos de trabajo cuando se requiera procesar tareas y eliminarlos al terminar. Recuerde que será necesario:
+Instalar con #user_data las herramientas necesarias (java, docker, tools, docker).
+Copiar ejecutable (jar, py, etc) o descargar imagen Docker (hub).
+Poner a correr la aplicación e integrarse al cluster de trabajo.
+
+El objetivo de este ejercicio es que ustedes puedan construir una arquitectura escalable (tipo 1, inicial) HÍBRIDA. Debe presentar el diagrama de arquitectura y comentar su decisión de desarrollar cada servicio y donde lo “coloca”.
+
+# Resolucion
+
+Para resolver este enunciado, utilizamos terraform y kubernetes siguiendo el diagrama.png, donde utilizamos goole cloud para que se mantenga funcionando en internet, en si el funcionamiento de cada parte esta explicado en el Hit#1, luego aca dejamos los comandos para poder hacer uso del proyecto terraform.
+
 # IMPORTANTE, siempre correr al finalizar
 >terraform destroy
 
@@ -66,4 +78,6 @@ kubectl get svc cliente
 Con la ip del servidor:
 ```
 http://34.75.184.36/sobel?image_url=https://imgs.search.brave.com/VyMDMutzQJTOYQZjnv9yhXb1NfyicOiLlexCkDe58KU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zMS5z/aWduaWZpY2Fkb3Mu/Y29tL2ZvdG8vaW1h/Z2VuLWluaWNpby1j/a2UuanBnP2NsYXNz/PWFydGljbGU
+
+http://34.75.184.36/sobel?image_url=https://imgs.search.brave.com/KpE6aao3PDrF0b5DYZhG4fYQMxSnrNSS43-VCt1n6LQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4z/LnBpeGVsY3V0LmFw/cC91cHNjYWxlX2Fm/dGVyXzJfNWY3N2Rh/YjkwYy5qcGc&n_parts=6
 ```

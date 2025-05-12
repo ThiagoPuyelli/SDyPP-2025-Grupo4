@@ -1,6 +1,4 @@
-Bienvenido al Hit#1
-
-# Consigna:
+# Hit 1 El operador de Sobel 
 
 El operador de Sobel es una máscara que, aplicada a una imagen, permite detectar (resaltar) bordes. Este operador es una operación matemática que, aplicada a cada pixel y teniendo en cuenta los píxeles que lo rodean, obtiene un nuevo valor (color) para ese pixel. Aplicando la operación a cada píxel, se obtiene una nueva imagen que resalta los bordes.
 Objetivo: 
@@ -35,13 +33,15 @@ Para solucionar esta problematica, pensamos en una infraestructura donde se ve r
 
 - Cliente: el cliente lo que hace es recibir las peticiones del usuario donde en base a eso tiene 2 endpoints:
 
-/sobel: Aca se pasa una url de la imagen, el cual la imagen tiene que estar subida en la internet y la cantidad de partes a particionar y las sube a internet, una vez que el usuario usa el endpoint, el cliente particiona la imagen y agrega las tareas en la cola de rabbitmq
+/sobel: Aca se pasa una url de la imagen, el cual la imagen tiene que estar subida en la internet y la cantidad de partes a particionar y las sube a internet, una vez que el usuario usa el endpoint, el cliente particiona la imagen y agrega las tareas en la cola de rabbitmq. (Cabe mencionar que de momento funciona solo con imagenes jpg)
 
 /get_image: En este endpoint se obtiene la imagen con un id, donde si la imagen todavia no fue terminada de procesar dara aviso de ello y sino devolvera la imagen ya procesada por el filtro de sobel
 
-Para hacer uso de estos endpoints dejo un par de ejemplos de prueba:
+Para hacer uso de estos endpoints, dejamos un par de ejemplos de prueba, la idea seria que abran el navegador y escriban esta url, o tambien pueden hacer alguna consulta de tipo GET:
 
 - http://localhost:8000/sobel?image_url=https://imgs.search.brave.com/VyMDMutzQJTOYQZjnv9yhXb1NfyicOiLlexCkDe58KU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zMS5z/aWduaWZpY2Fkb3Mu/Y29tL2ZvdG8vaW1h/Z2VuLWluaWNpby1j/a2UuanBnP2NsYXNz/PWFydGljbGU
+
+- http://localhost:8000/sobel?image_url=https://imgs.search.brave.com/KpE6aao3PDrF0b5DYZhG4fYQMxSnrNSS43-VCt1n6LQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4z/LnBpeGVsY3V0LmFw/cC91cHNjYWxlX2Fm/dGVyXzJfNWY3N2Rh/YjkwYy5qcGc&n_parts=6
 
 - http://localhost:8000/get_image/{image-id}
 
