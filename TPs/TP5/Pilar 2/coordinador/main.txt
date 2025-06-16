@@ -1,0 +1,219 @@
+# from fastapi import FastAPI
+# from pydantic import BaseModel
+# from typing import List
+# from datetime import datetime, timedelta
+# import asyncio, hashlib, json
+# from enum import Enum
+
+
+# app = FastAPI(title="Blockchain Coordinator")
+
+# # Estados del servidor
+# class CoordinatorState(Enum):
+#     UNSET = "server starting, only accepting transactions to queue"
+#     GIVING_TASKS = "expecting miners to request tasks"
+#     OPEN_TO_RESULTS = "accepting results from miners"
+#     SELECTING_WINNER = "selecting winner and rewarding"
+
+# # Config
+# INTERVAL_DURATION = 20 * 60  # 20 minutos
+# AWAIT_RESPONSE_DURATION = 1 * 60  # 1 minuto
+# MAX_MINING_ATTEMPTS = 3
+# BLOCK_TARGET_TIME = 2 * 60  # 2 minutos
+# ACCEPTED_ALGORITHM = "md5"
+
+# # Estado en memoria
+# current_target_prefix = "0000"
+# cicle_state = CoordinatorState.UNSET
+#     #rabbit
+# pending_transactions: List[dict] = []
+# active_transactions: List[dict] = []
+#     #redis
+# blockchain: List[dict] = []
+# received_chains: List[List[dict]] = []
+
+# # Esquemas
+# class Transaction(BaseModel):
+#     source: str
+#     target: str
+#     amount: float
+#     sign: str
+
+# class MinedBlock(BaseModel):
+#     timestamp: str
+#     previous_hash: str
+#     transaction: Transaction
+#     nonce: int
+#     miner_id: str
+#     hash: str
+#     signature: str
+
+# class MinedChain(BaseModel):
+#     blocks: List[MinedBlock]
+
+# # Utilidades
+# def compute_hash(block_data: dict) -> str:
+#     block_string = json.dumps(block_data, sort_keys=True).encode()
+#     return hashlib.new(ACCEPTED_ALGORITHM, block_string).hexdigest()
+
+# def is_valid_hash(h: str) -> bool:
+#     return h.startswith(current_target_prefix)
+
+# def adjust_difficulty():
+#     global current_target_prefix
+#     if len(blockchain) < 2: 
+#         return
+
+#     t1 = datetime.fromisoformat(blockchain[-1]["timestamp"])
+#     t0 = datetime.fromisoformat(blockchain[-2]["timestamp"])
+#     delta = (t1 - t0).total_seconds()
+
+#     if delta < BLOCK_TARGET_TIME / 2:
+#         current_target_prefix = "00000"
+#     elif delta > BLOCK_TARGET_TIME * 2:
+#         current_target_prefix = "000"
+#     # si está bien, se mantiene
+
+# def seconds_until_next_interval(interval_minutes: int) -> float:
+#     now = datetime.utcnow()
+#     # Redondeamos hacia arriba al próximo múltiplo del intervalo
+#     next_minute = ((now.minute // interval_minutes) + 1) * interval_minutes
+#     # Construimos el próximo instante con minutos ajustados y segundos, microsegundos en 0
+#     next_time = now.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=next_minute)
+#     # Si next_time ya pasó (puede ocurrir con horas), ajustamos sumando intervalo completo
+#     if next_time <= now:
+#         next_time += timedelta(minutes=interval_minutes)
+#     return (next_time - now).total_seconds()
+
+# async def wait_until_next_interval():
+#     seconds = seconds_until_next_interval(INTERVAL_DURATION // 60)
+#     print(f"Esperando {seconds:.1f} segundos hasta el próximo intervalo")
+#     await asyncio.sleep(seconds)
+
+# # Ciclo principal
+# async def periodic_block_generation():
+#     global blockchain, received_chains, active_transactions, pending_transactions, cicle_state
+
+#     while True:
+#         # Sincronizar con reloj para comenzar ciclo justo al inicio del intervalo
+#         seconds_to_next = seconds_until_next_interval(INTERVAL_DURATION // 60)
+#         print(f"Sincronizando... esperando {seconds_to_next:.1f} segundos para el próximo intervalo")
+#         await asyncio.sleep(seconds_to_next)
+
+#         # Ahora arranca el ciclo con estados y tiempos
+#         cicle_state = CoordinatorState.GIVING_TASKS
+#         print(f"[Estado] {cicle_state.value} - Ciclo iniciado, entregando tareas y esperando minado...")
+
+#         time_to_results = INTERVAL_DURATION - AWAIT_RESPONSE_DURATION
+#         await asyncio.sleep(time_to_results)
+
+#         cicle_state = CoordinatorState.OPEN_TO_RESULTS
+#         print(f"[Estado] {cicle_state.value} - Esperando resultados de mineros...")
+#         await asyncio.sleep(AWAIT_RESPONSE_DURATION)
+
+#         cicle_state = CoordinatorState.SELECTING_WINNER
+#         print(f"[Estado] {cicle_state.value} - Evaluando cadenas recibidas")
+#         best_chain = None
+#         for chain_blocks in received_chains:
+#             if not best_chain or len(chain_blocks) > len(best_chain):
+#                 best_chain = chain_blocks
+
+#         if best_chain:
+#             print(f"✔️ Cadena válida seleccionada con {len(best_chain)} bloques")
+#             blockchain.extend(best_chain)
+#             adjust_difficulty()
+#         else:
+#             print("⚠️ No se recibió ninguna cadena válida")
+
+#         active_transactions = []
+#         if pending_transactions:
+#             active_transactions.extend(pending_transactions)
+#             pending_transactions.clear()
+
+#         received_chains.clear()
+
+#         print(f"[Estado] {cicle_state.value} - Fin de ciclo\n")
+
+# # Endpoints
+# @app.post("/tasks")
+# async def submit_transaction(tx: Transaction):
+#     pending_transactions.append(tx.dict())
+#     # await redis.rpush("pending_transactions", json.dumps(tx.dict()))
+#     return {"status": "ok"}
+
+# @app.get("/tasks")
+# async def get_task():
+#     if not blockchain:
+#         previous_hash = "0"
+#     else:
+#         last_block = blockchain[-1]
+#         block_data = {
+#             "timestamp": last_block["timestamp"],
+#             "previous_hash": last_block["previous_hash"],
+#             "transaction": last_block["transaction"],
+#             "nonce": last_block["nonce"]
+#         }
+#         previous_hash = compute_hash(block_data)
+
+#     if not active_transactions:
+#         return {"message": "no tasks"}
+
+#     return {
+#         "previous_hash": previous_hash,
+#         "transaction": active_transactions[0],
+#         "target_prefix": current_target_prefix,
+#         "algorithm": ACCEPTED_ALGORITHM,
+#     }
+
+# @app.post("/results")
+# async def submit_result(chain: MinedChain):
+#     # Validar toda la cadena recibida
+#     blocks = chain.blocks
+
+#     if not blocks:
+#         return {"status": "error", "detail": "Cadena vacía"}
+
+#     # Validar encadenamiento y dificultad
+#     for i, block in enumerate(blocks):
+#         block_data = {
+#             "timestamp": block.timestamp,
+#             "previous_hash": block.previous_hash,
+#             "transaction": block.transaction.dict(),
+#             "nonce": block.nonce,
+#         }
+#         computed_hash = compute_hash(block_data)
+#         if computed_hash != block.hash or not is_valid_hash(block.hash):
+#             return {"status": "error", "detail": f"Bloque {i} inválido: hash incorrecto o dificultad no cumplida"}
+
+#         # Validar encadenamiento con bloque anterior (excepto primer bloque)
+#         if i > 0:
+#             if block.previous_hash != blocks[i-1].hash:
+#                 return {"status": "error", "detail": f"Bloque {i} inválido: previous_hash no coincide con bloque anterior"}
+
+#     # Validar que el primer bloque apunta al último bloque oficial de la blockchain
+#     last_blockchain_hash = "0" if not blockchain else compute_hash({
+#         "timestamp": blockchain[-1]["timestamp"],
+#         "previous_hash": blockchain[-1]["previous_hash"],
+#         "transaction": blockchain[-1]["transaction"],
+#         "nonce": blockchain[-1]["nonce"],
+#     })
+#     if blocks[0].previous_hash != last_blockchain_hash:
+#         return {"status": "error", "detail": "El primer bloque no apunta al último bloque oficial"}
+
+#     # Si válida:
+#     received_chains.append(chain.blocks)
+#     return {"status": "received"}
+
+# @app.get("/chain")
+# def get_chain():
+#     return blockchain
+
+# @app.get("/state")
+# def get_chain():
+#     global cicle_state
+#     return cicle_state.value
+
+# @app.on_event("startup")
+# async def startup():
+#     print("Iniciando ciclo principal de minería")
+#     asyncio.create_task(periodic_block_generation())
