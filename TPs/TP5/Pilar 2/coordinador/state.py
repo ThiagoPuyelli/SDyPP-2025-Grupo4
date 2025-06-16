@@ -1,0 +1,9 @@
+from typing import List
+from config import CoordinatorState
+
+current_target_prefix = "0000"
+cicle_state = CoordinatorState.UNSET
+pending_transactions: List[dict] = []
+active_transactions: List[dict] = []
+blockchain: List[dict] = []
+received_chains: List[List[dict]] = []
