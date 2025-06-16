@@ -1,7 +1,8 @@
 from fastapi import FastAPI
-from scheduler import periodic_block_generation
+from scheduler import coordinator_loop
 from endpoints import transactions, results, misc
 import asyncio
+from log_config import logger
 
 app = FastAPI(title="Blockchain Coordinator")
 
@@ -12,5 +13,5 @@ app.include_router(misc.router)
 
 @app.on_event("startup")
 async def startup():
-    print("Iniciando ciclo principal de minería")
-    asyncio.create_task(periodic_block_generation())
+    logger.info("Iniciando ciclo principal de minería")
+    asyncio.create_task(coordinator_loop())
