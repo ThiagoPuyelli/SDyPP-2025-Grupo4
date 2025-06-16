@@ -12,3 +12,6 @@ nvcc fuerzaBruta.cu -o f
 ./f <hash previo> <cadena> <rango maximo de numeros>
 
 
+Para probarlo en python seria:
+
+py CPU/fuerzaBruta.py

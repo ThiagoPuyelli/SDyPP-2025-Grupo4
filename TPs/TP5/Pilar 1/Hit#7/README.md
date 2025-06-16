@@ -6,7 +6,10 @@ Resultado:
 
 Para poder probar la fuerza bruta se puede hacer:
 
-nvcc fuerzaBruta.cu -o f
+nvcc GPU/fuerzaBruta.cu -o f
 ./f <hash previo> <cadena> <numero minimo> <numero maximo>
 
 
+Para probarlo en python seria:
+
+py CPU/fuerzaBruta.py

@@ -10,5 +10,9 @@ Respuesta:
 
 Para poder probar el hash md5 en GPU se puede probar utilizando:
 
-nvcc generarHash.cu -o g
+nvcc GPU/generarHash.cu -o g
 ./g <texto a aplicar hash>
+
+Para probarlo en python seria:
+
+py CPU/generarHash.py
