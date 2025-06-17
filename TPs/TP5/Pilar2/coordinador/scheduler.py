@@ -54,7 +54,8 @@ def handle_selecting_winner():
         logger.info("⚠️ No se recibió cadena válida")
 
 
-    # TODO implementar logica de ttl
+    # TODO implementar logica de ttl y de premiacion
+    
     active_transactions.clear()
     while (tx := pending_transactions.get()) is not None:
         active_transactions.put(tx)
