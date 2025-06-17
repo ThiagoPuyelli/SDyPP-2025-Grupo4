@@ -1,6 +1,6 @@
 from enum import Enum
-from database_service import LocalBlockchainDatabase, LocalReceivedChainsDatabase
-from queue_service import LocalTransactionQueue
+from services.database_service import LocalBlockchainDatabase, LocalReceivedChainsDatabase
+from services.queue_service import LocalTransactionQueue
 
 class CoordinatorState(str, Enum):
     UNSET = "server starting, only accepting transactions to queue"
