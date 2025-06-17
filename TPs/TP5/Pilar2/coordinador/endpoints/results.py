@@ -1,13 +1,14 @@
 from fastapi import APIRouter
 from models import MinedChain
 from utils import compute_hash, is_valid_hash, create_genesis_block
-from state import blockchain, received_chains, cicle_state, CoordinatorState
+from state import blockchain, received_chains, CoordinatorState
+import state
 
 router = APIRouter()
 
 @router.post("/results")
 async def submit_result(chain: MinedChain):
-    if not cicle_state == CoordinatorState.OPEN_TO_RESULTS:
+    if not state.cicle_state == CoordinatorState.OPEN_TO_RESULTS:
         return {"status": "error", "message": f"endpoint not available, wait for {CoordinatorState.OPEN_TO_RESULTS.name} state"}
     
     blocks = chain.blocks

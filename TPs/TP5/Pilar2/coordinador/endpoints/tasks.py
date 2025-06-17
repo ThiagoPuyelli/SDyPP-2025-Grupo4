@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from models import Transaction
-from state import cicle_state, CoordinatorState, pending_transactions, active_transactions, current_target_prefix, blockchain
-from utils import create_genesis_block, compute_hash
+from state import CoordinatorState, pending_transactions, active_transactions, current_target_prefix, blockchain
+import state
+from utils import create_genesis_block
 
 router = APIRouter()
 
@@ -12,7 +13,7 @@ async def submit_transaction(tx: Transaction):
 
 @router.get("/tasks")
 async def get_task():
-    if not cicle_state == CoordinatorState.GIVING_TASKS:
+    if not state.cicle_state == CoordinatorState.GIVING_TASKS:
         return {"status": "error", "message": f"endpoint not available, wait for {CoordinatorState.GIVING_TASKS.name} state"}
 
     if blockchain.is_empty:
