@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 import state
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from utils import seconds_until_next_interval, seconds_until_next_phase
 
 
@@ -13,7 +13,7 @@ def get_chain():
 @router.get("/state")
 def get_state():
     seconds_left = seconds_until_next_interval()
-    next_cycle_time = datetime.utcnow() + timedelta(seconds=seconds_left)
+    next_cycle_time = datetime.now(timezone.utc) + timedelta(seconds=seconds_left)
 
     seconds_until_phase, next_phase_utc = seconds_until_next_phase(state.cicle_state, state.phase_started_at)
 

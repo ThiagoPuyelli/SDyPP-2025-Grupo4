@@ -1,7 +1,7 @@
+from threading import Thread
 from fastapi import FastAPI
-from scheduler import coordinator_loop
+from scheduler import scheduler
 from endpoints import transactions, results, misc
-import asyncio
 from log_config import logger
 
 app = FastAPI(title="Blockchain Coordinator")
@@ -12,6 +12,6 @@ app.include_router(results.router)
 app.include_router(misc.router)
 
 @app.on_event("startup")
-async def startup():
-    logger.info("Iniciando ciclo principal de minería")
-    asyncio.create_task(coordinator_loop())
+def iniciar_coordinador():
+    thread = Thread(target=scheduler, daemon=True)  # Daemon=True para que termine al cerrar la app
+    thread.start()

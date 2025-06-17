@@ -12,7 +12,6 @@ async def submit_transaction(tx: Transaction):
 @router.get("/tasks")
 async def get_task():
     from utils import compute_hash
-    from config import ACCEPTED_ALGORITHM
 
     if not state.blockchain:
         previous_hash = "0"
@@ -31,7 +30,6 @@ async def get_task():
 
     return {
         "previous_hash": previous_hash,
-        "transaction": state.active_transactions[0],
+        "transaction": state.active_transactions,
         "target_prefix": state.current_target_prefix,
-        "algorithm": ACCEPTED_ALGORITHM,
     }

@@ -1,6 +1,6 @@
 import json
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from config import AWAIT_RESPONSE_DURATION, BLOCK_TARGET_TIME, ACCEPTED_ALGORITHM, INTERVAL_DURATION, CoordinatorState
 import state
 from typing import Optional, Tuple
@@ -24,7 +24,7 @@ def adjust_difficulty():
         state.current_target_prefix = "000"
 
 def seconds_until_next_interval(interval_minutes: int = INTERVAL_DURATION // 60) -> float:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     minutes = now.hour * 60 + now.minute
     next_minutes = ((minutes // interval_minutes) + 1) * interval_minutes
     delta_minutes = next_minutes - minutes
@@ -46,7 +46,7 @@ def seconds_until_next_phase(
         # Para SELECTING_WINNER o UNSET, asumimos que no hay duración fija
         return None, None
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     elapsed = (now - phase_started_at).total_seconds()
     remaining = max(0, phase_duration - elapsed)
     next_phase_time = phase_started_at + timedelta(seconds=phase_duration)

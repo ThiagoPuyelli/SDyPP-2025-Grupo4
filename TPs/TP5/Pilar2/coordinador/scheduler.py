@@ -1,86 +1,61 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import time
 from config import INTERVAL_DURATION, AWAIT_RESPONSE_DURATION, CoordinatorState
-from state import blockchain, pending_transactions, active_transactions, received_chains
+from state import blockchain, pending_transactions, active_transactions, received_chains, current_phase
 from utils import adjust_difficulty
 import state
 from log_config import logger
 
-
-async def coordinator_loop():
+def scheduler():
     logger.info("🚀 Iniciando coordinador... esperando próximo ciclo de reloj")
-
-    # Espera hasta el inicio del próximo intervalo alineado
-    next_start = get_last_interval_start() + timedelta(seconds=INTERVAL_DURATION)
-    next_state = CoordinatorState.GIVING_TASKS
-    wait = (next_start - datetime.utcnow()).total_seconds()
-    logger.info(f"⌛ Esperando {wait:.2f}s hasta el inicio de {next_state.name}")
-    await asyncio.sleep(max(0, wait))
+    current_phase = get_last_interval_start()
 
     while True:
-        # Establecer nuevo estado y tiempo
-        state.cicle_state = next_state
-        state.phase_started_at = next_start
-        logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {next_start}")
+        if state.cicle_state == CoordinatorState.UNSET:
+            #cuando llega a la fase nueva:
+            prox_intervalo = get_last_interval_start()
+            if (prox_intervalo > current_phase):
+                state.cicle_state = CoordinatorState.GIVING_TASKS
+                current_phase = prox_intervalo
+                logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {current_phase}")
+        
+        elif state.cicle_state == CoordinatorState.GIVING_TASKS:
+            now = datetime.now(timezone.utc)
+            prox_intervalo = current_phase + timedelta(seconds=INTERVAL_DURATION - AWAIT_RESPONSE_DURATION)
+            if (now > prox_intervalo):
+                state.cicle_state = CoordinatorState.OPEN_TO_RESULTS
+                current_phase = prox_intervalo
+                logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {current_phase}")
 
-        # Ejecutar lógica si es necesario
-        if next_state == CoordinatorState.SELECTING_WINNER:
-            await handle_selecting_winner()
+        elif state.cicle_state == CoordinatorState.OPEN_TO_RESULTS:
+            now = datetime.now(timezone.utc)
+            prox_intervalo = get_last_interval_start()
+            if (prox_intervalo > current_phase):
+                state.cicle_state = CoordinatorState.SELECTING_WINNER
+                logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {prox_intervalo}")
+                handle_selecting_winner()
+                
+                state.cicle_state = CoordinatorState.GIVING_TASKS
+                current_phase = prox_intervalo
+                logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {current_phase}")
+        logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {current_phase}")
+        time.sleep(1)
 
-        # Calcular próxima fase
-        next_start, next_state = get_next_phase_start_and_state()
-        wait = (next_start - datetime.utcnow()).total_seconds()
-        logger.info(f"🕒 Próxima fase: {next_state.name} comienza en {wait:.2f}s")
-        await asyncio.sleep(max(0, wait))
+def get_last_interval_start(lastPhase: datetime = None) -> datetime:
+    if lastPhase is None:
+        lastPhase = datetime.now(timezone.utc)
+    
+    total_seconds = (lastPhase.hour * 3600) + (lastPhase.minute * 60) + lastPhase.second
+    current_interval = (total_seconds // INTERVAL_DURATION) * INTERVAL_DURATION
+    
+    hour = current_interval // 3600
+    minute = (current_interval % 3600) // 60
+    second = 0  # Opcional: resetear segundos
+    
+    return lastPhase.replace(hour=hour, minute=minute, second=second, microsecond=0)
 
-def get_next_phase_start_and_state(now: datetime = None):
-    if now is None:
-        now = datetime.utcnow()
-
-    interval_start = get_last_interval_start(now)
-    giving_tasks_end = interval_start + timedelta(seconds=INTERVAL_DURATION - AWAIT_RESPONSE_DURATION)
-    open_to_results_end = interval_start + timedelta(seconds=INTERVAL_DURATION)
-
-    if now < giving_tasks_end:
-        next_start = giving_tasks_end
-        next_state = CoordinatorState.OPEN_TO_RESULTS
-    elif now < open_to_results_end:
-        next_start = open_to_results_end
-        next_state = CoordinatorState.SELECTING_WINNER
-    else:
-        next_start = interval_start + timedelta(seconds=INTERVAL_DURATION)
-        next_state = CoordinatorState.GIVING_TASKS
-
-    # Evitar que next_start sea igual o anterior a now, para que siempre avance
-    if next_start <= now:
-        next_start += timedelta(seconds=INTERVAL_DURATION)
-        # Estado siguiente al que teníamos antes
-        if next_state == CoordinatorState.GIVING_TASKS:
-            next_state = CoordinatorState.OPEN_TO_RESULTS
-        elif next_state == CoordinatorState.OPEN_TO_RESULTS:
-            next_state = CoordinatorState.SELECTING_WINNER
-        else:
-            next_state = CoordinatorState.GIVING_TASKS
-
-    return next_start, next_state
-
-def get_last_interval_start(now: datetime = None) -> datetime:
-    if now is None:
-        now = datetime.utcnow()
-    total_minutes = now.hour * 60 + now.minute
-    interval_minutes = INTERVAL_DURATION // 60
-    current_interval = (total_minutes // interval_minutes) * interval_minutes
-    hour = current_interval // 60
-    minute = current_interval % 60
-    return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-
-async def wait_until_first_interval():
-    from utils import seconds_until_next_interval
-    seconds = seconds_until_next_interval()
-    logger.info(f"[Sync] Esperando {seconds:.1f}s hasta el primer ciclo")
-    await asyncio.sleep(seconds)
-
-async def handle_selecting_winner():
+def handle_selecting_winner():
     best_chain = max(received_chains, key=len, default=None)
     if best_chain:
         blockchain.extend(best_chain)
