@@ -6,7 +6,7 @@ router = APIRouter()
 
 @router.post("/tasks")
 async def submit_transaction(tx: Transaction):
-    pending_transactions.append(tx.dict())
+    pending_transactions.put(tx)
     return {"status": "ok"}
 
 @router.get("/tasks")
@@ -16,23 +16,23 @@ async def get_task():
 
     from utils import compute_hash
 
-    if not blockchain:
-        previous_hash = "0"
-    else:
-        last_block = blockchain[-1]
-        block_data = {
-            "timestamp": last_block["timestamp"],
-            "previous_hash": last_block["previous_hash"],
-            "transaction": last_block["transaction"],
-            "nonce": last_block["nonce"]
-        }
-        previous_hash = compute_hash(block_data)
+    # if blockchain.is_empty:
+    #     previous_hash = "0"
+    # else:
+    #     last_block = blockchain[-1]
+    #     block_data = {
+    #         "timestamp": last_block["timestamp"],
+    #         "previous_hash": last_block["previous_hash"],
+    #         "transaction": last_block["transaction"],
+    #         "nonce": last_block["nonce"]
+    #     }
+    #     previous_hash = compute_hash(block_data)
 
-    if not active_transactions:
+    if active_transactions.is_empty():
         return {"message": "no tasks"}
 
     return {
         "previous_hash": previous_hash,
-        "transaction": active_transactions,
+        "transaction": active_transactions.peek_all(),
         "target_prefix": current_target_prefix,
     }

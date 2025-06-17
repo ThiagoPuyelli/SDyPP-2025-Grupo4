@@ -1,5 +1,6 @@
-from typing import List
 from enum import Enum
+from database_service import LocalBlockchainDatabase, LocalReceivedChainsDatabase
+from queue_service import LocalTransactionQueue
 
 class CoordinatorState(str, Enum):
     UNSET = "server starting, only accepting transactions to queue"
@@ -10,7 +11,11 @@ class CoordinatorState(str, Enum):
 current_target_prefix = "0000"
 cicle_state = CoordinatorState.UNSET
 current_phase = None
-pending_transactions: List[dict] = []
-active_transactions: List[dict] = []
-blockchain: List[dict] = []
-received_chains: List[List[dict]] = []
+# pending_transactions: List[dict] = []
+# active_transactions: List[dict] = []
+pending_transactions = LocalTransactionQueue()
+active_transactions = LocalTransactionQueue()
+# blockchain: List[dict] = []
+# received_chains: List[List[dict]] = []
+blockchain = LocalBlockchainDatabase()
+received_chains = LocalReceivedChainsDatabase()

@@ -8,7 +8,7 @@ router = APIRouter()
 
 @router.get("/chain")
 def get_chain():
-    return state.blockchain
+    return state.blockchain.get_chain()
 
 @router.get("/state")
 def get_state():

@@ -2,12 +2,15 @@ from datetime import datetime, timedelta, timezone
 import time
 from config import INTERVAL_DURATION, AWAIT_RESPONSE_DURATION
 from state import blockchain, pending_transactions, active_transactions, received_chains, current_phase, CoordinatorState
-from utils import adjust_difficulty, get_last_interval_start, seconds_until_next_interval
+from utils import adjust_difficulty, get_last_interval_start, seconds_until_next_interval, create_genesis_block
 import state
 from log_config import logger
 
 def scheduler():
     global current_phase
+
+    create_genesis_block()
+
     logger.info(f"🚀 Iniciando coordinador... el primer ciclo comienza en {seconds_until_next_interval()}s")
     current_phase = get_last_interval_start()
 
@@ -42,7 +45,7 @@ def scheduler():
         time.sleep(1)
 
 def handle_selecting_winner():
-    best_chain = max(received_chains, key=len, default=None)
+    best_chain = max(received_chains.get_all_chains(), key=len, default=None)
     if best_chain:
         blockchain.extend(best_chain)
         adjust_difficulty()
@@ -50,9 +53,11 @@ def handle_selecting_winner():
     else:
         logger.info("⚠️ No se recibió cadena válida")
 
+
+    # TODO implementar logica de ttl
     active_transactions.clear()
-    active_transactions.extend(pending_transactions)
-    pending_transactions.clear()
+    while (tx := pending_transactions.get()) is not None:
+        active_transactions.put(tx)
     received_chains.clear()
 
     logger.info("### Fin de ciclo ###\n")

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from models import MinedChain
-from utils import compute_hash, is_valid_hash
+from utils import compute_hash, is_valid_hash, create_genesis_block
 from state import blockchain, received_chains, cicle_state, CoordinatorState
 
 router = APIRouter()
@@ -16,7 +16,6 @@ async def submit_result(chain: MinedChain):
 
     for i, block in enumerate(blocks):
         block_data = {
-            "timestamp": block.timestamp,
             "previous_hash": block.previous_hash,
             "transaction": block.transaction.dict(),
             "nonce": block.nonce,
@@ -28,15 +27,16 @@ async def submit_result(chain: MinedChain):
         if i > 0 and block.previous_hash != blocks[i-1].hash:
             return {"status": "error", "detail": f"Invalid chaining at block {i}"}
 
-    last_hash = "0" if not blockchain else compute_hash({
-        "timestamp": blockchain[-1]["timestamp"],
-        "previous_hash": blockchain[-1]["previous_hash"],
-        "transaction": blockchain[-1]["transaction"],
-        "nonce": blockchain[-1]["nonce"],
+    if blockchain.is_empty(): create_genesis_block()
+
+    compute_hash({
+        "previous_hash": blockchain.get_last_block()["previous_hash"],
+        "transaction": blockchain.get_last_block()["transaction"],
+        "nonce": blockchain.get_last_block()["nonce"],
     })
 
     if blocks[0].previous_hash != last_hash:
         return {"status": "error", "detail": "Initial block does not chain to the block chain"}
 
-    received_chains.append(blocks)
+    received_chains.add_chain(blocks)
     return {"status": "received"}
