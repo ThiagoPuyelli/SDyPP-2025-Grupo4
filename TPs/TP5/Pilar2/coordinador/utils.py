@@ -1,9 +1,8 @@
 import json
 import hashlib
-from datetime import datetime, timedelta, timezone
-from config import AWAIT_RESPONSE_DURATION, BLOCK_TARGET_TIME, ACCEPTED_ALGORITHM, INTERVAL_DURATION, CoordinatorState
+from datetime import datetime, timezone
+from config import BLOCK_TARGET_TIME, ACCEPTED_ALGORITHM, INTERVAL_DURATION
 import state
-from typing import Optional, Tuple
 
 def compute_hash(block_data: dict) -> str:
     block_string = json.dumps(block_data, sort_keys=True).encode()
@@ -31,24 +30,15 @@ def seconds_until_next_interval(interval_minutes: int = INTERVAL_DURATION // 60)
     delta_seconds = delta_minutes * 60 - now.second - now.microsecond / 1_000_000
     return delta_seconds
 
-def seconds_until_next_phase(
-        current_state: CoordinatorState,
-        phase_started_at: Optional[datetime],
-    ) -> Tuple[Optional[float], Optional[datetime]]:
-    if not phase_started_at:
-        return None, None
-
-    if current_state == CoordinatorState.GIVING_TASKS:
-        phase_duration = INTERVAL_DURATION - AWAIT_RESPONSE_DURATION
-    elif current_state == CoordinatorState.OPEN_TO_RESULTS:
-        phase_duration = AWAIT_RESPONSE_DURATION
-    else:
-        # Para SELECTING_WINNER o UNSET, asumimos que no hay duración fija
-        return None, None
-
-    now = datetime.now(timezone.utc)
-    elapsed = (now - phase_started_at).total_seconds()
-    remaining = max(0, phase_duration - elapsed)
-    next_phase_time = phase_started_at + timedelta(seconds=phase_duration)
-
-    return remaining, next_phase_time
+def get_last_interval_start(lastPhase: datetime = None) -> datetime:
+    if lastPhase is None:
+        lastPhase = datetime.now(timezone.utc)
+    
+    total_seconds = (lastPhase.hour * 3600) + (lastPhase.minute * 60) + lastPhase.second
+    current_interval = (total_seconds // INTERVAL_DURATION) * INTERVAL_DURATION
+    
+    hour = current_interval // 3600
+    minute = (current_interval % 3600) // 60
+    second = 0  # Opcional: resetear segundos
+    
+    return lastPhase.replace(hour=hour, minute=minute, second=second, microsecond=0)

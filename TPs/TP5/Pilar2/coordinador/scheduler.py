@@ -1,24 +1,23 @@
-import asyncio
 from datetime import datetime, timedelta, timezone
 import time
-from config import INTERVAL_DURATION, AWAIT_RESPONSE_DURATION, CoordinatorState
-from state import blockchain, pending_transactions, active_transactions, received_chains, current_phase
-from utils import adjust_difficulty
+from config import INTERVAL_DURATION, AWAIT_RESPONSE_DURATION
+from state import blockchain, pending_transactions, active_transactions, received_chains, current_phase, CoordinatorState
+from utils import adjust_difficulty, get_last_interval_start, seconds_until_next_interval
 import state
 from log_config import logger
 
 def scheduler():
-    logger.info("🚀 Iniciando coordinador... esperando próximo ciclo de reloj")
+    global current_phase
+    logger.info(f"🚀 Iniciando coordinador... el primer ciclo comienza en {seconds_until_next_interval()}s")
     current_phase = get_last_interval_start()
 
     while True:
         if state.cicle_state == CoordinatorState.UNSET:
-            #cuando llega a la fase nueva:
             prox_intervalo = get_last_interval_start()
             if (prox_intervalo > current_phase):
                 state.cicle_state = CoordinatorState.GIVING_TASKS
                 current_phase = prox_intervalo
-                logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {current_phase}")
+                logger.info(f"[State] {state.cicle_state.name}")
         
         elif state.cicle_state == CoordinatorState.GIVING_TASKS:
             now = datetime.now(timezone.utc)
@@ -26,34 +25,21 @@ def scheduler():
             if (now > prox_intervalo):
                 state.cicle_state = CoordinatorState.OPEN_TO_RESULTS
                 current_phase = prox_intervalo
-                logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {current_phase}")
+                logger.info(f"[State] {state.cicle_state.name}")
 
         elif state.cicle_state == CoordinatorState.OPEN_TO_RESULTS:
             now = datetime.now(timezone.utc)
             prox_intervalo = get_last_interval_start()
             if (prox_intervalo > current_phase):
                 state.cicle_state = CoordinatorState.SELECTING_WINNER
-                logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {prox_intervalo}")
+                logger.info(f"[State] {state.cicle_state.name}")
                 handle_selecting_winner()
                 
                 state.cicle_state = CoordinatorState.GIVING_TASKS
                 current_phase = prox_intervalo
-                logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {current_phase}")
-        logger.info(f"[State] {state.cicle_state.name} - Comenzando fase a {current_phase}")
-        time.sleep(1)
+                logger.info(f"[State] {state.cicle_state.name}")
 
-def get_last_interval_start(lastPhase: datetime = None) -> datetime:
-    if lastPhase is None:
-        lastPhase = datetime.now(timezone.utc)
-    
-    total_seconds = (lastPhase.hour * 3600) + (lastPhase.minute * 60) + lastPhase.second
-    current_interval = (total_seconds // INTERVAL_DURATION) * INTERVAL_DURATION
-    
-    hour = current_interval // 3600
-    minute = (current_interval % 3600) // 60
-    second = 0  # Opcional: resetear segundos
-    
-    return lastPhase.replace(hour=hour, minute=minute, second=second, microsecond=0)
+        time.sleep(1)
 
 def handle_selecting_winner():
     best_chain = max(received_chains, key=len, default=None)

@@ -1,11 +1,3 @@
-from enum import Enum
-
-class CoordinatorState(str, Enum):
-    UNSET = "server starting, only accepting transactions to queue"
-    GIVING_TASKS = "expecting miners to request tasks"
-    OPEN_TO_RESULTS = "accepting results from miners"
-    SELECTING_WINNER = "selecting winner and rewarding"
-
 INTERVAL_DURATION = 1 * 60          # IMPORTANTE: que sea en minutos exactos (NO: 2.30; SI: 2)
                                     # IMPORTANTE: la cantidad de minutos del intervalo debe ser divisor de 60 (NO: 7; SI: 6)
 AWAIT_RESPONSE_DURATION = 0.5 * 60
