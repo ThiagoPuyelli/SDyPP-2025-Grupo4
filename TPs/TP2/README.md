@@ -1,7 +1,7 @@
 # FUNCIONAMIENTO DE LA APLICACION:
 #### Este repositorio contiene varias partes:
 **Servidor:** Recibe las peticiones del usuario, se encarga de hacer pull de las tareas, ejecutarlas y devolver una respuesta.  
-**Tarea generica:** Es una imagen transparente para el usuario, que implementa la logica de comunicacion con el servidor, sobre esta los usuarios crean sus propias tareas.  
+**Tarea generica:** Es una imagen transparente para el usuario, que implementa la logica de comunicacion con el servidor, cuando se construye la tarea de un usuario, se hace pulleando esta de de docker hub.  
 **Imagenes de ejemplo:** Son ejemplos de tareas que crearian los usuarios del servidor, implementan una estructura muy simple, con un modulo tareas.py donde escriben nada mas que sus funciones y un dockerfile que construye la tarea a partir de la generica.  
 **Cliente de prueba:** Un cliente para probar ingresando los datos por consola, tiene integrada una prueba basica, se puede ejecutar tambien con una peticion curl o Invoke-RestMethod, como se ejemplifica mas adelante.
 
