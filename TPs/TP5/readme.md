@@ -17,3 +17,5 @@ ej
 # sincronizar siempre con el mismo ntp (a nivel de sist operativo poner todos los nodos en el mismo servidor ntp)
 
 # validar que la transaccion es valida (que realmente esa wallet tiene la plata)
+
+# mas cosas para el bloque genesis: la pk y la privk de la cuenta base
