@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from models import Transaction
+from models import ActiveTransaction, Transaction
 from state import CoordinatorState, pending_transactions, active_transactions, current_target_prefix, blockchain
 import state
 from utils import create_genesis_block
@@ -8,7 +8,8 @@ router = APIRouter()
 
 @router.post("/tasks")
 async def submit_transaction(tx: Transaction):
-    pending_transactions.put(tx)
+    active_tx = ActiveTransaction(transaction=tx)
+    pending_transactions.put(active_tx)
     return {"status": "ok"}
 
 @router.get("/tasks")

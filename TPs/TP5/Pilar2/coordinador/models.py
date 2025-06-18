@@ -17,3 +17,7 @@ class MinedBlock(BaseModel):
 
 class MinedChain(BaseModel):
     blocks: List[MinedBlock]
+
+class ActiveTransaction(BaseModel):
+    transaction: Transaction
+    ttl: int = 0
