@@ -31,6 +31,11 @@ class BlockchainDatabase(ABC):
     def is_empty(self) -> bool:
         pass
 
+    @abstractmethod
+    def get_block(self, block_hash: str) -> Union[MinedBlock, None]:
+        """Devuelve un bloque por su hash, o None si no existe"""
+        pass
+
 class ReceivedChainsDatabase(ABC):
     @abstractmethod
     def add_chain(self, chain: MinedChain) -> None:
@@ -70,6 +75,12 @@ class LocalBlockchainDatabase(BlockchainDatabase):
 
     def is_empty(self) -> bool:
         return len(self._chain.blocks) == 0
+    
+    def get_block(self, block_hash: str) -> Union[MinedBlock, None]:
+        for block in self._chain.blocks:
+            if block.hash == block_hash:
+                return block
+        return None
 
 class LocalReceivedChainsDatabase(ReceivedChainsDatabase):
     def __init__(self):

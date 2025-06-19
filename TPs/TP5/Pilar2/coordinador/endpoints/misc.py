@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 import state
 from datetime import datetime, timedelta, timezone
 from utils import seconds_until_next_interval
@@ -21,3 +21,10 @@ def get_state():
         "seconds_until_next_cycle": round(seconds_left),
         "next_cycle_utc": next_cycle_time.isoformat() + "Z",
     }
+
+@router.get("/block")
+def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
+    block = state.blockchain.get_block_by_hash(hash)
+    if block:
+        return block
+    return {"error": "Bloque no encontrado"}, 404

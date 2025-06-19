@@ -5,3 +5,17 @@
 docker build -t coordinador .
 docker run -p 8000:8000 coordinador
 ```
+
+# complejidad del desafio:
+los umbrales van en el genesis
+
+ej
+90% subo 1 cero
+10% bajo 1 cero
+
+
+# sincronizar siempre con el mismo ntp (a nivel de sist operativo poner todos los nodos en el mismo servidor ntp)
+
+# validar que la transaccion es valida (que realmente esa wallet tiene la plata)
+
+# mas cosas para el bloque genesis: la pk y la privk de la cuenta base
