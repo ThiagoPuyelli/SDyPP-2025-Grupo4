@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cstdint>
+#include <cstdint>
+#include <chrono>
 
 // Convierte un entero a su representación hexadecimal (para GPU)
 __device__ void uintToHex(uint val, char* hexStr) {
@@ -20,13 +22,12 @@ __global__ void buscarEnRango(
     uint lenCadena,
     const char* prefijo,
     uint lenPrefijo,
-    unsigned long long inicioRango,
     unsigned long long finRango,
     unsigned long long* numeroEncontrado,
     uint* hashEncontrado
 ) {
     if (*numeroEncontrado != 0) return;
-    unsigned long long numero = inicioRango + blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long long numero = blockIdx.x * blockDim.x + threadIdx.x;
     if (numero >= finRango) return;
 
     // Preparamos la cadena: "cadena" + "numero"
@@ -87,19 +88,21 @@ __global__ void buscarEnRango(
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 5) {
-        printf("Uso: %s <prefijo> <cadena> <inicio_rango> <fin_rango>\n", argv[0]);
+    if (argc != 4) {
+        printf("Uso: %s <prefijo> <cadena> <rango>\n", argv[0]);
         return 1;
     }
 
     const char* prefijo = argv[1];
     const char* cadena = argv[2];
-    unsigned long long inicioRango = strtoull(argv[3], NULL, 10);
-    unsigned long long finRango = strtoull(argv[4], NULL, 10);
+    unsigned long long finRango = strtoull(argv[3], NULL, 10);
+
+    // Inicio del cronómetro
+    auto start = std::chrono::high_resolution_clock::now();
 
     // Configuración de CUDA
     uint threadsPorBloque = 256;
-    unsigned long long totalNumeros = finRango - inicioRango;
+    unsigned long long totalNumeros = finRango;
     uint bloques = (totalNumeros + threadsPorBloque - 1) / threadsPorBloque;
 
     // Reservamos memoria en la GPU
@@ -126,7 +129,6 @@ int main(int argc, char* argv[]) {
         strlen(cadena),
         d_prefijo,
         strlen(prefijo),
-        inicioRango,
         finRango,
         d_numeroEncontrado,
         d_hashEncontrado
@@ -138,6 +140,10 @@ int main(int argc, char* argv[]) {
     cudaMemcpy(&numeroEncontrado, d_numeroEncontrado, sizeof(unsigned long long), cudaMemcpyDeviceToHost);
     cudaMemcpy(hashEncontrado, d_hashEncontrado, 4 * sizeof(uint), cudaMemcpyDeviceToHost);
 
+    // Fin del cronómetro
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+
     // Mostramos el resultado
     if (numeroEncontrado != 0) {
         printf("Número encontrado: %llu\n", numeroEncontrado);
@@ -147,8 +153,12 @@ int main(int argc, char* argv[]) {
         }
         printf("\n");
     } else {
-        printf("No se encontró un número en el rango %llu-%llu.\n", inicioRango, finRango);
+        printf("No se encontró un número en el rango %d-%llu.\n", 0, finRango);
     }
+
+    // Mostramos el tiempo de ejecución
+    printf("Tiempo de ejecución: %.6f segundos\n", elapsed.count());
+    printf("Hashes por segundo: %.2f\n", finRango / elapsed.count());
 
     // Liberamos memoria
     cudaFree(d_cadena);

@@ -15,14 +15,15 @@ def conseguirHash (hash, cadena, max):
         texto = cadena + str(x)
         resultado = calcular_md5(texto)
         if (resultado.startswith(hash)): 
-            return resultado
+            return [resultado, x]
         
 
 hash = input("Ingresa el hash: ")
 cadena = input("Ingresa la cadena: ")
 max = int(input("Ingresa el maximo: "))
-hash_resultado = conseguirHash(hash, cadena, max)
+[hash_resultado, nonce] = conseguirHash(hash, cadena, max)
 if hash_resultado:
     print(f"Resultado: {hash_resultado}")
+    print(f"Nonce: {nonce}")
 else:
     print("No se encontro el resultado")
