@@ -49,6 +49,10 @@ class ReceivedChainsDatabase(ABC):
     def clear(self) -> None:
         pass
 
+    @abstractmethod
+    def is_empty(self) -> bool:
+        pass
+
 class LocalBlockchainDatabase(BlockchainDatabase):
     def __init__(self):
         self._chain = MinedChain(blocks=[])
@@ -94,3 +98,6 @@ class LocalReceivedChainsDatabase(ReceivedChainsDatabase):
     
     def clear(self) -> None:
         self._chains.clear()
+
+    def is_empty(self) -> bool:
+        return len(self._chains) == 0

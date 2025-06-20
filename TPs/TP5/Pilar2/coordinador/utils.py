@@ -1,8 +1,8 @@
 import json
 import hashlib
 from datetime import datetime, timezone
-from config import BLOCK_TARGET_TIME, ACCEPTED_ALGORITHM, INTERVAL_DURATION
-from state import blockchain, current_target_prefix 
+from config import ACCEPTED_ALGORITHM, INTERVAL_DURATION, AWAIT_RESPONSE_DURATION
+from state import CoordinatorState, blockchain, current_target_prefix 
 from typing import Optional
 from models import MinedBlock, Transaction
 
@@ -34,6 +34,15 @@ def seconds_until_next_interval(interval_minutes: int = INTERVAL_DURATION // 60)
     delta_minutes = next_minutes - minutes
     delta_seconds = delta_minutes * 60 - now.second - now.microsecond / 1_000_000
     return delta_seconds
+
+def get_starting_phase() -> CoordinatorState:
+    now = datetime.now(timezone.utc)
+    intervalo = get_last_interval_start()
+    segundos = (now - intervalo).total_seconds()
+    if segundos < INTERVAL_DURATION - AWAIT_RESPONSE_DURATION:
+        return CoordinatorState.GIVING_TASKS
+    else: 
+        return CoordinatorState.OPEN_TO_RESULTS
 
 def get_last_interval_start(lastPhase: datetime = None) -> datetime:
     if lastPhase is None:
