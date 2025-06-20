@@ -1,6 +1,6 @@
 ## TODO:
 Pasar estado a redis para soportar multiples servidores?
-como manejo el tema de selecting winner? es uno solo?
+como manejo el tema de selecting winner? es uno solo? agrego en redis el id del que va a calcular el ganador para cierto ciclo desde el mismo coordinador, y todos verifican que sean ese, cuando termina de calcular se borra, debe ademas tener un timestamp para que no quede bloqueado por siempre si muere al calcular el ganador
 
 
 ### posible mejora:
