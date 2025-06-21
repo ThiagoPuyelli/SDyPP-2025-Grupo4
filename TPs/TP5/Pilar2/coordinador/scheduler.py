@@ -8,46 +8,57 @@ from log_config import logger
 
 def scheduler():
 
+    start_monotonic = time.monotonic()
+    hora_inicio = datetime.now(timezone.utc)
+    state.current_phase = get_last_interval_start(hora_inicio)
+
+    desfase_monotonic = (hora_inicio - state.current_phase).total_seconds()
+
     if state.blockchain.is_empty:
         create_genesis_block()
 
-    state.cicle_state = get_starting_phase()
+    state.cicle_state = get_starting_phase(hora_inicio)
 
     # borro bajo ciertas condiciones las received_chains al iniciar el servidor
     if (state.cicle_state == CoordinatorState.GIVING_TASKS and
     not state.received_chains.is_empty):
         handle_selecting_winner()
-
-    state.current_phase = get_last_interval_start()
     
     logger.info(f"🚀 Coordinador Iniciado... ")
 
     while True:
+
+        elapsed = (time.monotonic() - start_monotonic + desfase_monotonic) % INTERVAL_DURATION
+        hora_actual = hora_inicio + timedelta(seconds=elapsed)
+        proximo_estado = get_starting_phase(hora_actual)
+
         if state.cicle_state == CoordinatorState.UNSET:
-            prox_intervalo = get_last_interval_start()
+            prox_intervalo = get_last_interval_start(hora_actual)
             if (prox_intervalo > state.current_phase):
                 state.cicle_state = CoordinatorState.GIVING_TASKS
                 state.current_phase = prox_intervalo
                 logger.info(f"[State] {state.cicle_state.name}")
         
         elif state.cicle_state == CoordinatorState.GIVING_TASKS:
-            now = datetime.now(timezone.utc)
             prox_intervalo = state.current_phase + timedelta(seconds=INTERVAL_DURATION - AWAIT_RESPONSE_DURATION)
-            if (now > prox_intervalo):
+            if (hora_actual > prox_intervalo):
                 state.cicle_state = CoordinatorState.OPEN_TO_RESULTS
                 state.current_phase = prox_intervalo
                 logger.info(f"[State] {state.cicle_state.name}")
 
         elif state.cicle_state == CoordinatorState.OPEN_TO_RESULTS:
-            now = datetime.now(timezone.utc)
-            prox_intervalo = get_last_interval_start() + timedelta(seconds=INTERVAL_DURATION)
-            if (now > prox_intervalo):
-                handle_selecting_winner()
+            prox_intervalo = get_last_interval_start(hora_actual)
+            logger.info(prox_intervalo)
+            logger.info(state.current_phase)
+            logger.info()
+            if (prox_intervalo > state.current_phase):
+                handle_selecting_winner(hora_actual)
+                state.current_phase = prox_intervalo
 
-        logger.info(f"Estado: {state.cicle_state.name}")
+        logger.info(f"T: {hora_actual}, Estado: {state.cicle_state.name}")
         time.sleep(1)
 
-def handle_selecting_winner():
+def handle_selecting_winner(hora_actual):
     state.cicle_state = CoordinatorState.SELECTING_WINNER
     logger.info(f"[State] {state.cicle_state.name}")
     best_chain = max(state.received_chains.get_all_chains(), key=lambda c: len(c.blocks), default=None)
@@ -91,5 +102,5 @@ def handle_selecting_winner():
 
     logger.info("### Fin de ciclo ###\n")
     state.cicle_state = CoordinatorState.GIVING_TASKS
-    state.current_phase = get_last_interval_start()
+    state.current_phase = get_last_interval_start(hora_actual)
     logger.info(f"[State] {state.cicle_state.name}")

@@ -35,9 +35,10 @@ def seconds_until_next_interval(interval_minutes: int = INTERVAL_DURATION // 60)
     delta_seconds = delta_minutes * 60 - now.second - now.microsecond / 1_000_000
     return delta_seconds
 
-def get_starting_phase() -> CoordinatorState:
-    now = datetime.now(timezone.utc)
-    intervalo = get_last_interval_start()
+def get_starting_phase(now) -> CoordinatorState:
+    if now is None:
+        now = datetime.now(timezone.utc)
+    intervalo = get_last_interval_start(now)
     segundos = (now - intervalo).total_seconds()
     if segundos < INTERVAL_DURATION - AWAIT_RESPONSE_DURATION:
         return CoordinatorState.GIVING_TASKS
