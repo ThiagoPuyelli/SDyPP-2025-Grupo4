@@ -14,7 +14,7 @@ class MonotonicFormatter(logging.Formatter):
         monotonic_now = self.hora_inicio + timedelta(seconds=elapsed)
         return monotonic_now.strftime(datefmt or self.default_time_format)
 
-def setup_logger_con_monotonic(hora_inicio, start_monotonic, desfase_monotonic):
+def setup_logger_con_monotonic(hora_inicio, start_monotonic, desfase_monotonic=0):
     formatter = MonotonicFormatter(
         fmt='[%(asctime)s] %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',

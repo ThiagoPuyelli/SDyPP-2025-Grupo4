@@ -1,34 +1,45 @@
+from datetime import datetime
 from cumplirTareas import minar
-from utils import get_current_phase, get_last_interval_start
+from utils import get_current_phase
 from state import CoordinatorState
 import state
-from log_config import logger
+from log_config import setup_logger_con_monotonic, logger
 import time
 import requests
 import threading
-from datetime import datetime, timezone, timedelta
-from config import URI, BLOCK_TARGET_TIME, INTERVAL_DURATION, AWAIT_RESPONSE_DURATION
+from config import URI
+from monotonic import MonotonicTime
 
 stop_mining_event = threading.Event()
 
 def iniciar ():
+    global logger
+
     hilo = None
     mining = False
     results_delivered = False
 
-    ## ESTO LO USARIA SOLO PARA RECUPERAR LAS GLOBALES DEL GENESIS
-    # response = requests.get(URI + '/state')
-    
-    # while not response.ok:
-    #     print("Reintento de conexión con el coordinador")
-    #     time.sleep(3)
-    #     response = requests.get(URI + '/state')
-        
-    # data = response.json()
-    # state = data["state"]
+    while True:
+        try:
+            response = requests.get(URI + '/state', timeout=5)
+            if response.ok:
+                break  # salió bien, salimos del while
+            else:
+                logger.info(f"Error HTTP {response.status_code}, reintentando...")
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
+
+        time.sleep(3)
+    data = response.json()
+
+    mono_time = MonotonicTime(datetime.fromisoformat(data["server-date-time"]))
+
+    logger = setup_logger_con_monotonic(mono_time.hora_inicio, mono_time.start_monotonic)
+
+    ## TODO RECUPERAR LAS GLOBALES DEL GENESIS
 
     while True:
-        nuevo_estado = get_current_phase()
+        nuevo_estado = get_current_phase(mono_time.get_hora_actual())
         if nuevo_estado == CoordinatorState.GIVING_TASKS:
             results_delivered = False
             if not mining:
@@ -52,7 +63,6 @@ def iniciar ():
                                         break
                                 time.sleep(3)
                         except requests.RequestException as e:
-                            # Podés loguear el error si querés
                             logger.error(f"Error al enviar resultados al coordinador: {e}")
                         finally:
                             state.mined_blocks = []
@@ -70,6 +80,7 @@ def iniciar_minero():
                 response = requests.get(URI + '/tasks', timeout=5)
                 if response.ok:
                     data = response.json()
+                    logger.info(f"Tareas recibidas: {data}")
                     break
                 else:
                     logger.info(f"Respuesta inválida del coordinador: {response.status_code}")
@@ -95,6 +106,8 @@ def iniciar_minero():
 def detener_mineria():
     stop_mining_event.set()
 
+
+iniciar()
 
     # current_phase = get_last_interval_start()
     # operate = False
@@ -126,7 +139,7 @@ def detener_mineria():
     #         state = "OPEN_TO_RESULTS" if state == "GIVING_TASKS" else "GIVING_TASKS" 
     #         time.sleep(delay)
 
-iniciar()
+
 
 
             

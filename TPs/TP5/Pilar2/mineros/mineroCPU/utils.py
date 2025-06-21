@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 from state import CoordinatorState
 from config import INTERVAL_DURATION, AWAIT_RESPONSE_DURATION
 
-def get_current_phase() -> CoordinatorState:
-    now = datetime.now(timezone.utc)
-    intervalo = get_last_interval_start()
+def get_current_phase(now) -> CoordinatorState:
+    if now == None:
+        now = datetime.now(timezone.utc)
+    intervalo = get_last_interval_start(now)
     segundos = (now - intervalo).total_seconds()
     if segundos < INTERVAL_DURATION - AWAIT_RESPONSE_DURATION:
         return CoordinatorState.GIVING_TASKS

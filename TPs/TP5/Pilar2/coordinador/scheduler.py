@@ -11,7 +11,7 @@ logger = None
 def scheduler():
     global logger
 
-    logger = setup_logger_con_monotonic(mono_time.hora_inicio, mono_time.start_monotonic, mono_time.desfase_monotonic)
+    logger = setup_logger_con_monotonic(mono_time.hora_inicio, mono_time.start_monotonic)
 
     if state.blockchain.is_empty:
         create_genesis_block()
@@ -42,7 +42,7 @@ def scheduler():
             logger.info("### Fin de ciclo ###\n")
             state.cicle_state = CoordinatorState.GIVING_TASKS
             logger.info(f"[STATE] {state.cicle_state.name}")
-        logger.info(f"[hor] {mono_time.get_hora_actual()} [ini] {mono_time.hora_inicio} [des] {mono_time.desfase_monotonic}")
+        logger.info(f"[hor] {mono_time.get_hora_actual()} [est] {state.cicle_state.name}")
         time.sleep(1)
 
 def handle_selecting_winner():
