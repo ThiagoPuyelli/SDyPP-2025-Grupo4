@@ -1,18 +1,22 @@
 from datetime import datetime, timedelta, timezone
 import time
-from config import INTERVAL_DURATION, AWAIT_RESPONSE_DURATION, MAX_MINING_ATTEMPTS
+from config import MAX_MINING_ATTEMPTS
 from state import CoordinatorState
 from utils import adjust_difficulty, get_last_interval_start, create_genesis_block, get_starting_phase
 import state
-from log_config import logger
+from log_config import setup_logger_con_monotonic
+
+logger = None
 
 def scheduler():
+    global logger
 
     start_monotonic = time.monotonic()
     hora_inicio = datetime.now(timezone.utc)
-    state.current_phase = get_last_interval_start(hora_inicio)
 
-    desfase_monotonic = (hora_inicio - state.current_phase).total_seconds()
+    desfase_monotonic = (hora_inicio - get_last_interval_start(hora_inicio)).total_seconds()
+
+    logger = setup_logger_con_monotonic(hora_inicio, start_monotonic, desfase_monotonic)
 
     if state.blockchain.is_empty:
         create_genesis_block()
@@ -23,44 +27,33 @@ def scheduler():
     if (state.cicle_state == CoordinatorState.GIVING_TASKS and
     not state.received_chains.is_empty):
         handle_selecting_winner()
+        logger.info(f"Primero calculamos el ultimo ganador")
     
     logger.info(f"🚀 Coordinador Iniciado... ")
 
     while True:
 
-        elapsed = (time.monotonic() - start_monotonic + desfase_monotonic) % INTERVAL_DURATION
+        elapsed = time.monotonic() - start_monotonic - desfase_monotonic
         hora_actual = hora_inicio + timedelta(seconds=elapsed)
         proximo_estado = get_starting_phase(hora_actual)
-
-        if state.cicle_state == CoordinatorState.UNSET:
-            prox_intervalo = get_last_interval_start(hora_actual)
-            if (prox_intervalo > state.current_phase):
-                state.cicle_state = CoordinatorState.GIVING_TASKS
-                state.current_phase = prox_intervalo
-                logger.info(f"[State] {state.cicle_state.name}")
         
-        elif state.cicle_state == CoordinatorState.GIVING_TASKS:
-            prox_intervalo = state.current_phase + timedelta(seconds=INTERVAL_DURATION - AWAIT_RESPONSE_DURATION)
-            if (hora_actual > prox_intervalo):
-                state.cicle_state = CoordinatorState.OPEN_TO_RESULTS
-                state.current_phase = prox_intervalo
-                logger.info(f"[State] {state.cicle_state.name}")
+        if (state.cicle_state == CoordinatorState.GIVING_TASKS and 
+        proximo_estado != CoordinatorState.GIVING_TASKS):
+            state.cicle_state = CoordinatorState.OPEN_TO_RESULTS
+            logger.info(f"[STATE] {state.cicle_state.name}")
 
-        elif state.cicle_state == CoordinatorState.OPEN_TO_RESULTS:
-            prox_intervalo = get_last_interval_start(hora_actual)
-            logger.info(prox_intervalo)
-            logger.info(state.current_phase)
-            logger.info()
-            if (prox_intervalo > state.current_phase):
-                handle_selecting_winner(hora_actual)
-                state.current_phase = prox_intervalo
+        elif (state.cicle_state == CoordinatorState.OPEN_TO_RESULTS and 
+        proximo_estado != CoordinatorState.OPEN_TO_RESULTS):
+            handle_selecting_winner()
+            logger.info("### Fin de ciclo ###\n")
+            state.cicle_state = CoordinatorState.GIVING_TASKS
+            logger.info(f"[STATE] {state.cicle_state.name}")
 
-        logger.info(f"T: {hora_actual}, Estado: {state.cicle_state.name}")
         time.sleep(1)
 
-def handle_selecting_winner(hora_actual):
+def handle_selecting_winner():
     state.cicle_state = CoordinatorState.SELECTING_WINNER
-    logger.info(f"[State] {state.cicle_state.name}")
+    logger.info(f"[STATE] {state.cicle_state.name}")
     best_chain = max(state.received_chains.get_all_chains(), key=lambda c: len(c.blocks), default=None)
 
     # LO PRIMERO QUE HACEMOS ES BORRAR RECEIVED_CHAINS, necesario para la gestion ante fallos,
@@ -99,8 +92,3 @@ def handle_selecting_winner(hora_actual):
     
     else:
         logger.info("⚠️ No se recibió cadena válida")
-
-    logger.info("### Fin de ciclo ###\n")
-    state.cicle_state = CoordinatorState.GIVING_TASKS
-    state.current_phase = get_last_interval_start(hora_actual)
-    logger.info(f"[State] {state.cicle_state.name}")
