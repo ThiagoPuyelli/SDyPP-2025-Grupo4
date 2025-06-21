@@ -1,3 +1,15 @@
+## correr local:
+```
+docker network create mining-net 
+
+docker build -t coordinadorimg ./coordinador
+docker build -t mineroimg ./mineros/mineroCPU
+
+
+docker run --name coordinator --network mining-net -p 8000:8000 coordinadorimg
+docker run --name miner --network mining-net mineroimg
+```
+
 ## TODO:
 Pasar estado a redis para soportar multiples servidores?
 como manejo el tema de selecting winner? es uno solo? agrego en redis el id del que va a calcular el ganador para cierto ciclo desde el mismo coordinador, y todos verifican que sean ese, cuando termina de calcular se borra, debe ademas tener un timestamp para que no quede bloqueado por siempre si muere al calcular el ganador
@@ -24,6 +36,10 @@ ej
 ### validar que la transaccion es valida (que realmente esa wallet tiene la plata) PONER EN EL INFORME QUE SE HACE DESPUES
 
 ### mas cosas para el bloque genesis: la pk y la privk de la cuenta base
+
+### que los mineros consulten las constantes del sistema en el bloque genesis
+
+### implementar un corrector de tiempo, que vaya ajustando los calculos del minero segun el delay que tenga su reloj con el del coordinador (positivo o negativo)
 
 
 # Informe
