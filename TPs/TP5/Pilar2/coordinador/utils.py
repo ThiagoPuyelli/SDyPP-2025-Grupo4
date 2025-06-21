@@ -27,14 +27,6 @@ def adjust_difficulty():
     #     current_target_prefix = "000"
     pass
 
-def seconds_until_next_interval(interval_minutes: int = INTERVAL_DURATION // 60) -> float:
-    now = datetime.now(timezone.utc)
-    minutes = now.hour * 60 + now.minute
-    next_minutes = ((minutes // interval_minutes) + 1) * interval_minutes
-    delta_minutes = next_minutes - minutes
-    delta_seconds = delta_minutes * 60 - now.second - now.microsecond / 1_000_000
-    return delta_seconds
-
 def get_starting_phase(now) -> CoordinatorState:
     if now is None:
         now = datetime.now(timezone.utc)

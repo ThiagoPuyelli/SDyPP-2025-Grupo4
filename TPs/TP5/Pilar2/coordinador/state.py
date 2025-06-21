@@ -10,11 +10,7 @@ class CoordinatorState(str, Enum):
 
 current_target_prefix = "0000"
 cicle_state = CoordinatorState.UNSET
-# pending_transactions: List[dict] = []
-# active_transactions: List[dict] = []
 pending_transactions = LocalTransactionQueue()
 active_transactions = LocalTransactionQueue()
-# blockchain: List[dict] = []
-# received_chains: List[List[dict]] = []
 blockchain = LocalBlockchainDatabase()
 received_chains = LocalReceivedChainsDatabase()

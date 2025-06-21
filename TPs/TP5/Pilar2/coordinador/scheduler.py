@@ -1,27 +1,22 @@
-from datetime import datetime, timedelta, timezone
 import time
 from config import MAX_MINING_ATTEMPTS
 from state import CoordinatorState
-from utils import adjust_difficulty, get_last_interval_start, create_genesis_block, get_starting_phase
+from utils import adjust_difficulty, create_genesis_block, get_starting_phase
 import state
 from log_config import setup_logger_con_monotonic
+from monotonic import mono_time
 
 logger = None
 
 def scheduler():
     global logger
 
-    start_monotonic = time.monotonic()
-    hora_inicio = datetime.now(timezone.utc)
-
-    desfase_monotonic = (hora_inicio - get_last_interval_start(hora_inicio)).total_seconds()
-
-    logger = setup_logger_con_monotonic(hora_inicio, start_monotonic, desfase_monotonic)
+    logger = setup_logger_con_monotonic(mono_time.hora_inicio, mono_time.start_monotonic, mono_time.desfase_monotonic)
 
     if state.blockchain.is_empty:
         create_genesis_block()
 
-    state.cicle_state = get_starting_phase(hora_inicio)
+    state.cicle_state = get_starting_phase(mono_time.get_hora_actual())
 
     # borro bajo ciertas condiciones las received_chains al iniciar el servidor
     if (state.cicle_state == CoordinatorState.GIVING_TASKS and
@@ -33,8 +28,7 @@ def scheduler():
 
     while True:
 
-        elapsed = time.monotonic() - start_monotonic - desfase_monotonic
-        hora_actual = hora_inicio + timedelta(seconds=elapsed)
+        hora_actual = mono_time.get_hora_actual()
         proximo_estado = get_starting_phase(hora_actual)
         
         if (state.cicle_state == CoordinatorState.GIVING_TASKS and 
@@ -48,7 +42,7 @@ def scheduler():
             logger.info("### Fin de ciclo ###\n")
             state.cicle_state = CoordinatorState.GIVING_TASKS
             logger.info(f"[STATE] {state.cicle_state.name}")
-
+        logger.info(f"[hor] {mono_time.get_hora_actual()} [ini] {mono_time.hora_inicio} [des] {mono_time.desfase_monotonic}")
         time.sleep(1)
 
 def handle_selecting_winner():
