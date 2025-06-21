@@ -40,10 +40,11 @@ def scheduler():
 
         elif state.cicle_state == CoordinatorState.OPEN_TO_RESULTS:
             now = datetime.now(timezone.utc)
-            prox_intervalo = get_last_interval_start()
-            if (prox_intervalo > state.current_phase):
+            prox_intervalo = get_last_interval_start() + timedelta(seconds=INTERVAL_DURATION)
+            if (now > prox_intervalo):
                 handle_selecting_winner()
 
+        logger.info(f"Estado: {state.cicle_state.name}")
         time.sleep(1)
 
 def handle_selecting_winner():
@@ -59,34 +60,34 @@ def handle_selecting_winner():
         state.blockchain.extend(best_chain.blocks)
         adjust_difficulty()
         logger.info("✔️ Cadena aceptada")
+
+        mined_signatures = {block.transaction.sign for block in best_chain.blocks}
+
+        # Procesar activas: pasar las no minadas a pending, actualizar TTL o descartarlas
+        for active_tx in state.active_transactions.peek_all():
+            tx = active_tx.transaction
+            if tx.sign not in mined_signatures:
+                active_tx.ttl += 1
+                if active_tx.ttl <= MAX_MINING_ATTEMPTS:
+                    state.pending_transactions.put(active_tx) # mover a pendiente nuevamente
+                    logger.info(f"🔁 Reencolando {tx.sign} (TTL {active_tx.ttl})")
+                else:
+                    logger.warning(f"❌ Transacción descartada por TTL: {tx.sign}")
+            else:
+                logger.info(f"✅ Transacción minada: {tx.sign}")
+
+        # Limpiar las activas antiguas
+        state.active_transactions.clear()
+
+        # Mover todas las pendientes a activas para el próximo ciclo
+        while (tx := state.pending_transactions.get()) is not None:
+            state.active_transactions.put(tx)
+
+        # borrar las pendientes
+        state.pending_transactions.clear()
+    
     else:
         logger.info("⚠️ No se recibió cadena válida")
-        return
-
-    mined_signatures = {block.transaction.sign for block in best_chain.blocks}
-
-    # Procesar activas: pasar las no minadas a pending, actualizar TTL o descartarlas
-    for active_tx in state.active_transactions.peek_all():
-        tx = active_tx.transaction
-        if tx.sign not in mined_signatures:
-            active_tx.ttl += 1
-            if active_tx.ttl <= MAX_MINING_ATTEMPTS:
-                state.pending_transactions.put(active_tx) # mover a pendiente nuevamente
-                logger.info(f"🔁 Reencolando {tx.sign} (TTL {active_tx.ttl})")
-            else:
-                logger.warning(f"❌ Transacción descartada por TTL: {tx.sign}")
-        else:
-            logger.info(f"✅ Transacción minada: {tx.sign}")
-
-    # Limpiar las activas antiguas
-    state.active_transactions.clear()
-
-    # Mover todas las pendientes a activas para el próximo ciclo
-    while (tx := state.pending_transactions.get()) is not None:
-        state.active_transactions.put(tx)
-
-    # borrar las pendientes
-    state.pending_transactions.clear()
 
     logger.info("### Fin de ciclo ###\n")
     state.cicle_state = CoordinatorState.GIVING_TASKS
