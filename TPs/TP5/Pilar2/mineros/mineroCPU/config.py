@@ -5,4 +5,5 @@ AWAIT_RESPONSE_DURATION = 0.5 * 60
 MAX_MINING_ATTEMPTS = 3
 BLOCK_TARGET_TIME = 2 * 60
 ACCEPTED_ALGORITHM = "md5"
-URI = "http://localhost:8000"
+URI = "http://coordinator:8000"
+MINER_ID = 123 ## TODO id

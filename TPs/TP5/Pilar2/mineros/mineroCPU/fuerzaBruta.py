@@ -1,5 +1,4 @@
 import hashlib
-import time
 
 def calcular_md5(texto):
     # Crear un objeto hash MD5
@@ -11,8 +10,10 @@ def calcular_md5(texto):
     # Obtener el hash en formato hexadecimal
     return hash_md5.hexdigest()
 
-def conseguirHash(hash, cadena, min, max):
+def conseguirHash(hash, cadena, min, max, stop):
     for x in range(min, max):
+        if stop.is_set(): break
+        
         texto = cadena + str(x)
         resultado = calcular_md5(texto)
         if resultado.startswith(hash): 

@@ -1,66 +1,130 @@
-from cumplirTareas import cumplirTareas
+from cumplirTareas import minar
+from utils import get_current_phase, get_last_interval_start
+from state import CoordinatorState
+import state
+from log_config import logger
 import time
 import requests
+import threading
 from datetime import datetime, timezone, timedelta
 from config import URI, BLOCK_TARGET_TIME, INTERVAL_DURATION, AWAIT_RESPONSE_DURATION
-from dateutil.parser import isoparse
 
-def get_last_interval_start(lastPhase: datetime = None) -> datetime:
-    if lastPhase is None:
-        lastPhase = datetime.now(timezone.utc)
-    
-    total_seconds = (lastPhase.hour * 3600) + (lastPhase.minute * 60) + lastPhase.second
-    current_interval = (total_seconds // INTERVAL_DURATION) * INTERVAL_DURATION
-    
-    hour = current_interval // 3600
-    minute = (current_interval % 3600) // 60
-    second = 0  # Opcional: resetear segundos
-    
-    return lastPhase.replace(hour=hour, minute=minute, second=second, microsecond=0)
+stop_mining_event = threading.Event()
 
 def iniciar ():
-    transactions = []
+    hilo = None
+    mining = False
+    results_delivered = False
 
-    response = requests.get(URI + '/state')
+    ## ESTO LO USARIA SOLO PARA RECUPERAR LAS GLOBALES DEL GENESIS
+    # response = requests.get(URI + '/state')
     
-    while not response.ok:
-        print("Reintento de conexión con el coordinador")
-        time.sleep(3)
-        response = requests.get(URI + '/state')
+    # while not response.ok:
+    #     print("Reintento de conexión con el coordinador")
+    #     time.sleep(3)
+    #     response = requests.get(URI + '/state')
         
-    data = response.json()
-    state = data["state"]
-    
-    
-    current_phase = get_last_interval_start()
-    operate = False
+    # data = response.json()
+    # state = data["state"]
+
     while True:
-        if state == "GIVING_TASKS":
-            if not operate:
-                print("Resolviendo tareas")
-                transactions.extend(cumplirTareas(nextCycle))
-            now = datetime.now(timezone.utc)
-            prox_intervalo = current_phase + timedelta(seconds=INTERVAL_DURATION - AWAIT_RESPONSE_DURATION)
-            if (now > prox_intervalo):
-                state.cicle_state = CoordinatorState.OPEN_TO_RESULTS
-                current_phase = prox_intervalo
-            
-        elif state == "OPEN_TO_RESULTS":
-            if len(transactions) > 0:
-                requests.post(URI + "/results", transactions)
-                transactions = []
-        
-        if nextCycle <= datetime.now(timezone.utc):
-            if state == "GIVING_TASKS":
-                nextCycle = datetime.now(timezone.utc) + timedelta(seconds=BLOCK_TARGET_TIME) 
-            elif state == "OPEN_TO_RESULTS":
-                nextCycle = datetime.now(timezone.utc) + timedelta(seconds=INTERVAL_DURATION)
+        nuevo_estado = get_current_phase()
+        if nuevo_estado == CoordinatorState.GIVING_TASKS:
+            results_delivered = False
+            if not mining:
+                hilo = iniciar_minero()
+                mining = True
                 
-        delay = (nextCycle - datetime.now(timezone.utc)).total_seconds()
-        print("DELAY: ", delay)
-        if delay > 0:
-            state = "OPEN_TO_RESULTS" if state == "GIVING_TASKS" else "GIVING_TASKS" 
-            time.sleep(delay)
+        else:
+            mining = False
+            if not results_delivered:
+                if hilo:
+                    detener_mineria()
+                    hilo.join()
+                    # enviar resultados
+                    if len(state.mined_blocks) > 0:
+                        try:
+                            while True:
+                                res = requests.post(URI + "/results", json=state.mined_blocks, timeout=5)
+                                if res.status_code == 200:
+                                    data = res.json()
+                                    if data.get("status") == "received":
+                                        break
+                                time.sleep(3)
+                        except requests.RequestException as e:
+                            # Podés loguear el error si querés
+                            logger.error(f"Error al enviar resultados al coordinador: {e}")
+                        finally:
+                            state.mined_blocks = []
+                results_delivered = True
+        
+        logger.info(nuevo_estado.name)
+        time.sleep(1)
+
+def iniciar_minero():
+    # obtengo tareas
+    data = None
+    try:
+        while True:
+            try:
+                response = requests.get(URI + '/tasks', timeout=5)
+                if response.ok:
+                    data = response.json()
+                    break
+                else:
+                    logger.info(f"Respuesta inválida del coordinador: {response.status_code}")
+            except requests.RequestException as e:
+                logger.warning(f"Error al conectar con el coordinador: {e}")
+            
+            logger.info("Reintento de conexión con el coordinador en 3 segundos...")
+            time.sleep(3)
+
+    except Exception as e:
+        logger.error(f"Fallo crítico al obtener tareas: {e}")
+    # comienzo la mineria
+    data = response.json()
+    state.mined_blocks = []
+
+    stop_mining_event.clear()
+    
+    hilo = threading.Thread(target=minar, args=(data, stop_mining_event,))
+    hilo.start()
+    
+    return hilo
+
+def detener_mineria():
+    stop_mining_event.set()
+
+
+    # current_phase = get_last_interval_start()
+    # operate = False
+    # while True:
+    #     if state == "GIVING_TASKS":
+    #         if not operate:
+    #             print("Resolviendo tareas")
+    #             transactions.extend(cumplirTareas(nextCycle))
+    #         now = datetime.now(timezone.utc)
+    #         prox_intervalo = current_phase + timedelta(seconds=INTERVAL_DURATION - AWAIT_RESPONSE_DURATION)
+    #         if (now > prox_intervalo):
+    #             state.cicle_state = CoordinatorState.OPEN_TO_RESULTS
+    #             current_phase = prox_intervalo
+            
+    #     elif state == "OPEN_TO_RESULTS":
+    #         if len(transactions) > 0:
+    #             requests.post(URI + "/results", transactions)
+    #             transactions = []
+        
+    #     if nextCycle <= datetime.now(timezone.utc):
+    #         if state == "GIVING_TASKS":
+    #             nextCycle = datetime.now(timezone.utc) + timedelta(seconds=BLOCK_TARGET_TIME) 
+    #         elif state == "OPEN_TO_RESULTS":
+    #             nextCycle = datetime.now(timezone.utc) + timedelta(seconds=INTERVAL_DURATION)
+                
+    #     delay = (nextCycle - datetime.now(timezone.utc)).total_seconds()
+    #     print("DELAY: ", delay)
+    #     if delay > 0:
+    #         state = "OPEN_TO_RESULTS" if state == "GIVING_TASKS" else "GIVING_TASKS" 
+    #         time.sleep(delay)
 
 iniciar()
 
