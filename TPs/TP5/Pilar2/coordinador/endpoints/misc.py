@@ -11,7 +11,6 @@ def get_chain():
 
 @router.get("/state")
 def get_state():
-
     return {
         "state": state.cicle_state.name,
         "description": state.cicle_state.value,

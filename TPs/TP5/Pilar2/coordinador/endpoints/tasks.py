@@ -25,9 +25,3 @@ async def get_task():
         "target_prefix": current_target_prefix,
     }
 
-# ENDPOINT DE PRUEBA
-@router.get("/pendientes")
-def get_pend():
-    return {
-        "pending_transactions": pending_transactions.peek_all(),
-    }
