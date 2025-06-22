@@ -3,30 +3,28 @@
 docker network create mining-net 
 
 docker build -t coordinadorimg ./coordinador
-docker build -t mineroimg ./mineros/mineroCPU
-
-
 docker run --name coordinator --network mining-net -p 8000:8000 coordinadorimg
+
+docker build -t mineroimg ./mineros/mineroCPU
 docker run --name miner --network mining-net mineroimg
 ```
 
 ## TODO:
 Pasar estado a redis para soportar multiples servidores?
 como manejo el tema de selecting winner? es uno solo? agrego en redis el id del que va a calcular el ganador para cierto ciclo desde el mismo coordinador, y todos verifican que sean ese, cuando termina de calcular se borra, debe ademas tener un timestamp para que no quede bloqueado por siempre si muere al calcular el ganador
-
 ## implementar leader election, para ahora o para el final? es lo de arriba
 
 ## validar que la cuenta tenga saldo
 
+## validar hashes de resultados
+
 ## recompensar
 
 
-```
-docker build -t coordinador .
-docker run -p 8000:8000 coordinador
-```
+# problemas que encontramos:
+- el reloj desconfigurandose, en un entorno dockerizado, hizo usar monotonic time
 
-## complejidad del desafio:
+# complejidad del desafio:
 los umbrales van en el genesis
 
 ej
