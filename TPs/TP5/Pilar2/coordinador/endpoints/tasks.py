@@ -1,8 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from models import ActiveTransaction, Transaction
 from state import CoordinatorState, pending_transactions, active_transactions, current_target_prefix, blockchain
 import state
-from utils import create_genesis_block
 
 router = APIRouter()
 
@@ -14,14 +13,21 @@ async def submit_transaction(tx: Transaction):
 
 @router.get("/tasks")
 async def get_task():
-    if not state.cicle_state == CoordinatorState.GIVING_TASKS:
-        return {"status": "error", "message": f"endpoint not available, wait for {CoordinatorState.GIVING_TASKS.name} state"}
-
-    if blockchain.is_empty:
-        create_genesis_block()
+    if state.cicle_state != CoordinatorState.GIVING_TASKS:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Endpoint not available, wait for {CoordinatorState.GIVING_TASKS.name} state"
+        )
 
     return {
         "previous_hash": blockchain.get_last_block().hash,
         "transaction": active_transactions.peek_all(),
         "target_prefix": current_target_prefix,
+    }
+
+# ENDPOINT DE PRUEBA
+@router.get("/pendientes")
+def get_pend():
+    return {
+        "pending_transactions": pending_transactions.peek_all(),
     }

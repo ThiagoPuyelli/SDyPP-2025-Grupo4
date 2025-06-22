@@ -5,4 +5,4 @@ MAX_MINING_ATTEMPTS = 0
 ACCEPTED_ALGORITHM = ""
 
 URI = "http://coordinator:8000"
-MINER_ID = 123 ## TODO id
+MINER_ID = "123" ## TODO id

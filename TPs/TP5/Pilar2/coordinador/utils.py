@@ -6,13 +6,23 @@ from state import CoordinatorState, blockchain, current_target_prefix
 from typing import Optional
 from models import MinedBlock, Transaction
 
-def compute_hash(block_data: dict) -> str:
-    block_string = json.dumps(block_data, sort_keys=True).encode()
-    return hashlib.new(config.ACCEPTED_ALGORITHM, block_string).hexdigest()
 
-def is_valid_hash(h: str) -> bool:
-    global current_target_prefix
-    return h.startswith(current_target_prefix)
+def calcular_md5(texto):
+    hash_md5 = hashlib.md5()
+    hash_md5.update(texto.encode('utf-8'))
+    return hash_md5.hexdigest()
+
+def is_valid_hash(block, prefix):
+    t = block.transaction
+    cadena_base = f"{block.previous_hash} {t.source} {t.target} {t.amount} {t.timestamp} {t.sign} {block.miner_id}"
+    cadena_completa = cadena_base + str(block.nonce)
+    hash_calculado = calcular_md5(cadena_completa)
+    
+    if hash_calculado != block.hash:
+        return False
+    if not hash_calculado.startswith(prefix):
+        return False
+    return True
 
 def adjust_difficulty():
     # global current_target_prefix

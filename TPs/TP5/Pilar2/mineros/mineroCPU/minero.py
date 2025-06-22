@@ -71,10 +71,10 @@ def iniciar ():
                     hilo.join()
                     logger.info("Mineria finalizada, enviando resultados")
                     # enviar resultados
-                    if len(state.mined_blocks) > 0:
+                    if len(state.mined_blocks.blocks) > 0:
                         try:
                             while True:
-                                res = requests.post(config.URI + "/results", json=state.mined_blocks, timeout=5)
+                                res = requests.post(config.URI + "/results", json=state.mined_blocks.model_dump(), timeout=5)
                                 if res.status_code == 200:
                                     data = res.json()
                                     if data.get("status") == "received":
@@ -83,8 +83,6 @@ def iniciar ():
                                 time.sleep(3)
                         except requests.RequestException as e:
                             logger.error(f"Error al enviar resultados al coordinador: {e}")
-                        finally:
-                            state.mined_blocks = []
                 results_delivered = True
 
         time.sleep(1)
@@ -97,8 +95,6 @@ def iniciar_minero():
             try:
                 response = requests.get(config.URI + '/tasks', timeout=5)
                 if response.ok:
-                    data = response.json()
-                    logger.info(f"Tareas recibidas: {data}")
                     break
                 else:
                     logger.info(f"Respuesta inválida del coordinador: {response.status_code}")
@@ -112,7 +108,8 @@ def iniciar_minero():
         logger.error(f"Fallo crítico al obtener tareas: {e}")
     # comienzo la mineria
     data = response.json()
-    state.mined_blocks = []
+    logger.info(f"Tareas recibidas: {data}")
+    state.mined_blocks.blocks.clear()
 
     stop_mining_event.clear()
     
