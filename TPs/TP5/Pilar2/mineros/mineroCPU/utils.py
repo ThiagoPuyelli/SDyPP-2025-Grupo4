@@ -1,4 +1,9 @@
 from datetime import datetime, timezone
+import time
+import requests
+from monotonic import MonotonicTime
+from log_config import setup_logger_con_monotonic
+import state
 from state import CoordinatorState
 import config
 
@@ -24,3 +29,20 @@ def get_last_interval_start(lastPhase: datetime = None) -> datetime:
     second = 0  # Opcional: resetear segundos
     
     return lastPhase.replace(hour=hour, minute=minute, second=second, microsecond=0)
+
+def sync_con_coordinador():
+    while True:
+        try:
+            response = requests.get(config.URI + '/state', timeout=5)
+            if response.ok:
+                data = response.json()
+                state.mono_time = MonotonicTime(datetime.fromisoformat(data["server-date-time"]))
+                break
+            else:
+                logger.info(f"Error HTTP {response.status_code}, reintentando...")
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
+
+        time.sleep(3)
+    # sincronizo el reloj del logger
+    logger = setup_logger_con_monotonic(state.mono_time.hora_inicio, state.mono_time.start_monotonic)

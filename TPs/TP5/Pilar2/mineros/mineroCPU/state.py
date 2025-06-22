@@ -1,5 +1,4 @@
 from enum import Enum
-
 from models import MinedChain
 
 class CoordinatorState(str, Enum):
@@ -9,3 +8,5 @@ class CoordinatorState(str, Enum):
     # SELECTING_WINNER = "selecting winner and rewarding"
 
 mined_blocks = MinedChain(blocks=[])
+
+mono_time = None

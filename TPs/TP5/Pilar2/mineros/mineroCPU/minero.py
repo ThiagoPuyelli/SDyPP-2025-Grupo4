@@ -1,20 +1,17 @@
 from datetime import datetime
 from cumplirTareas import minar
-from utils import get_current_phase
+from utils import get_current_phase, sync_con_coordinador
 from state import CoordinatorState
 import state
-from log_config import setup_logger_con_monotonic, logger
+from log_config import logger
 import time
 import requests
 import threading
 import config
-from monotonic import MonotonicTime
 
 stop_mining_event = threading.Event()
 
 def iniciar ():
-    global logger
-
     hilo = None
     mining = False
     results_delivered = False
@@ -38,30 +35,18 @@ def iniciar ():
         time.sleep(3)
 
     # sincronizo el reloj con el coordinador
-    while True:
-        try:
-            response = requests.get(config.URI + '/state', timeout=5)
-            if response.ok:
-                data = response.json()
-                mono_time = MonotonicTime(datetime.fromisoformat(data["server-date-time"]))
-                break
-            else:
-                logger.info(f"Error HTTP {response.status_code}, reintentando...")
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
-
-        time.sleep(3)
-    # sincronizo el reloj del logger
-    logger = setup_logger_con_monotonic(mono_time.hora_inicio, mono_time.start_monotonic)
+    sync_con_coordinador()
 
     # ciclo principal
     while True:
-        nuevo_estado = get_current_phase(mono_time.get_hora_actual())
+        nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
         if nuevo_estado == CoordinatorState.GIVING_TASKS:
             results_delivered = False
             if not mining:
                 hilo = iniciar_minero()
                 mining = True
+                # vuelvo a coordinar el tiempo
+                sync_con_coordinador()
                 
         else:
             mining = False
