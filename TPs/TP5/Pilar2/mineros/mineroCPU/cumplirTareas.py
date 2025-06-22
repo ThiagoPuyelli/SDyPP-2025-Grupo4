@@ -10,15 +10,12 @@ def minar(data, detener_mineria):
     prefix = data["target_prefix"]
     for t in transactions:
         if detener_mineria.is_set(): return
-        logger.info(transactions)
-        logger.info(t)
         numero_encontrado, hash_resultado = conseguirHash(
             prefix, 
             f"{previousHash} {t['source']} {t['target']} {t['amount']} {t['timestamp']} {t['sign']} {config.MINER_ID}", 
             0, 
             1000000000, 
             detener_mineria)
-        logger.info(numero_encontrado)
         if numero_encontrado:
             nuevo_bloque = MinedBlock(
                 previous_hash=previousHash,
@@ -29,7 +26,7 @@ def minar(data, detener_mineria):
             )
             state.mined_blocks.blocks.append(nuevo_bloque)
             previousHash = hash_resultado
-            logger.info(f"Transaccion minada: {t}")
+            logger.info(f"Transaccion minada, bloque: {nuevo_bloque}")
     logger.info("Se termino de minar sin ser interrumpido")
         
         

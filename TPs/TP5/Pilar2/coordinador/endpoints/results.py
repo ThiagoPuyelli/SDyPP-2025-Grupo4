@@ -42,7 +42,7 @@ async def submit_result(chain: MinedChain):
                     detail=f"Invalid chaining at block {i}"
                 )
 
-        received_chains.add_chain(blocks)
+        received_chains.add_chain(MinedChain(blocks=blocks))
         logger.info(f"Workload recibida: {blocks}")
         return {"status": "received"}
     

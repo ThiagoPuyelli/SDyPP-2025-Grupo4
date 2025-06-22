@@ -2,6 +2,8 @@
 from typing import Optional, List
 from abc import ABC, abstractmethod
 from models import ActiveTransaction, Transaction  # Reemplazado Transaction por ActiveTransaction
+import pika
+import json
 
 class BaseQueue(ABC):
     @abstractmethod
@@ -67,36 +69,48 @@ class LocalTransactionQueue(BaseQueue):
         return self._queue.copy()
 
 
-# Implementación para RabbitMQ (esqueleto)
+# Implementación para RabbitMQ
 class RabbitTransactionQueue(BaseQueue):
-    def __init__(self, queue_name: str, connection_params: dict):
+    def __init__(self, queue_name: str, host: str, port: int, user: str, password: str):
         self.queue_name = queue_name
-        self.connection_params = connection_params
-        # Configurar conexión a RabbitMQ aquí
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=host,
+                port=port,
+                credentials=pika.PlainCredentials(user, password)
+            )
+        )
+        self.channel = self.connection.channel()
+        self.channel.queue_declare(queue=queue_name, durable=True)
 
     def put(self, transaction: ActiveTransaction) -> None:
-        # Serializar la transacción y enviar a RabbitMQ
-        pass
+        body = json.dumps(transaction.model_dump())
+        self.channel.basic_publish(
+            exchange='',
+            routing_key=self.queue_name,
+            body=body,
+            properties=pika.BasicProperties(delivery_mode=2)
+        )
 
     def get(self) -> Optional[ActiveTransaction]:
-        # Recibir y deserializar transacción desde RabbitMQ
-        pass
+        method_frame, header_frame, body = self.channel.basic_get(queue=self.queue_name)
+        if body:
+            self.channel.basic_ack(method_frame.delivery_tag)
+            return ActiveTransaction.model_validate(json.loads(body))
+        return None
 
     def peek_all(self) -> List[Transaction]:
-        # Nota: Esto no es natural en RabbitMQ, podrías necesitar un diseño alternativo
-        pass
+        raise NotImplementedError("RabbitMQ no permite peek_all sin consumir mensajes.")
 
     def size(self) -> int:
-        # Obtener tamaño de la cola desde RabbitMQ
-        pass
+        q = self.channel.queue_declare(queue=self.queue_name, passive=True)
+        return q.method.message_count
 
     def clear(self) -> None:
-        # Limpiar la cola en RabbitMQ
-        pass
+        self.channel.queue_purge(queue=self.queue_name)
 
     def is_empty(self) -> bool:
-        # Devolver True si la cola está vacía
-        pass
+        return self.size() == 0
 
     def get_all_transactions_with_ttl(self) -> List[ActiveTransaction]:
-        pass
+        raise NotImplementedError("No se puede recuperar todos los elementos sin consumirlos.")

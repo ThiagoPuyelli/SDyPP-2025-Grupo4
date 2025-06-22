@@ -49,7 +49,7 @@ def handle_selecting_winner():
     all_chains = state.received_chains.get_all_chains()
     logger.info(f"Cadenas recibidas: {all_chains}")
 
-    best_chain = max(all_chains, key=lambda c: len(c), default=None)
+    best_chain = max(all_chains, key=lambda c: len(c.blocks), default=None)
 
     # LO PRIMERO QUE HACEMOS ES BORRAR RECEIVED_CHAINS, necesario para la gestion ante fallos,
         # ya que validaremos esta estructura cuando el servidor inicia
@@ -61,7 +61,7 @@ def handle_selecting_winner():
         adjust_difficulty()
         logger.info("✔️ Cadena aceptada")
 
-        mined_signatures = {block.transaction.sign for block in best_chain}
+        mined_signatures = {block.transaction.sign for block in best_chain.blocks}
     
     else:
         logger.info("⚠️ No se recibió cadena válida")

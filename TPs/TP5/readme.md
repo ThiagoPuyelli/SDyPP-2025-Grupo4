@@ -1,9 +1,12 @@
 ## correr local:
-```
+Nos paramos en la carpeta "Pilar2" y ejecutamos:
+```shell
 docker network create mining-net 
 
+docker-compose --env-file .env up -d
+
 docker build -t coordinadorimg ./coordinador
-docker run --name coordinator --network mining-net -p 8000:8000 coordinadorimg
+docker run --name coordinator --network mining-net -p 8000:8000 --env-file .env coordinadorimg
 
 docker build -t mineroimg ./mineros/mineroCPU
 docker run --name miner --network mining-net mineroimg
