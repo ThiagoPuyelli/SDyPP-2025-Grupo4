@@ -20,7 +20,7 @@ def get_state():
 
 @router.get("/block")
 def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
-    block = state.blockchain.get_block_by_hash(hash)
+    block = state.blockchain.get_block(hash)
     if block:
         return block
     return {"error": "Bloque no encontrado"}, 404

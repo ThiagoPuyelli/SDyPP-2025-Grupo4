@@ -1,13 +1,13 @@
 from datetime import datetime, timezone
 from state import CoordinatorState
-from config import INTERVAL_DURATION, AWAIT_RESPONSE_DURATION
+import config
 
 def get_current_phase(now) -> CoordinatorState:
     if now == None:
         now = datetime.now(timezone.utc)
     intervalo = get_last_interval_start(now)
     segundos = (now - intervalo).total_seconds()
-    if segundos < INTERVAL_DURATION - AWAIT_RESPONSE_DURATION:
+    if segundos < config.INTERVAL_DURATION - config.AWAIT_RESPONSE_DURATION:
         return CoordinatorState.GIVING_TASKS
     else: 
         return CoordinatorState.OPEN_TO_RESULTS
@@ -17,7 +17,7 @@ def get_last_interval_start(lastPhase: datetime = None) -> datetime:
         lastPhase = datetime.now(timezone.utc)
     
     total_seconds = (lastPhase.hour * 3600) + (lastPhase.minute * 60) + lastPhase.second
-    current_interval = (total_seconds // INTERVAL_DURATION) * INTERVAL_DURATION
+    current_interval = (total_seconds // config.INTERVAL_DURATION) * config.INTERVAL_DURATION
     
     hour = current_interval // 3600
     minute = (current_interval % 3600) // 60

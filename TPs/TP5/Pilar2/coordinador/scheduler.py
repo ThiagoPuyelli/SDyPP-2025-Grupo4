@@ -42,7 +42,6 @@ def scheduler():
             logger.info("### Fin de ciclo ###\n")
             state.cicle_state = CoordinatorState.GIVING_TASKS
             logger.info(f"[STATE] {state.cicle_state.name}")
-        logger.info(f"[hor] {mono_time.get_hora_actual()} [est] {state.cicle_state.name}")
         time.sleep(1)
 
 def handle_selecting_winner():

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 from typing import List
 
 class Transaction(BaseModel):
@@ -14,6 +14,8 @@ class MinedBlock(BaseModel):
     nonce: int 
     miner_id: str # pk del minero
     hash: str
+    class Config:
+        extra = Extra.allow
 
 class MinedChain(BaseModel):
     blocks: List[MinedBlock]

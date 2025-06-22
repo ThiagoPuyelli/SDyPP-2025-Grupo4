@@ -7,7 +7,7 @@ from log_config import setup_logger_con_monotonic, logger
 import time
 import requests
 import threading
-from config import URI
+import config
 from monotonic import MonotonicTime
 
 stop_mining_event = threading.Event()
@@ -19,25 +19,42 @@ def iniciar ():
     mining = False
     results_delivered = False
 
+    # obtengo la configuracion de la blockchain
     while True:
         try:
-            response = requests.get(URI + '/state', timeout=5)
+            response = requests.get(config.URI + '/block', params={"hash": 0}, timeout=5)
             if response.ok:
-                break  # salió bien, salimos del while
+                data = response.json()
+                config.INTERVAL_DURATION = data["blockchain_config"]["interval_duration"]
+                config.AWAIT_RESPONSE_DURATION = data["blockchain_config"]["await_response_duration"]
+                config.MAX_MINING_ATTEMPTS = data["blockchain_config"]["max_mining_attempts"]
+                config.ACCEPTED_ALGORITHM = data["blockchain_config"]["accepted_algorithm"]
+                break
             else:
                 logger.info(f"Error HTTP {response.status_code}, reintentando...")
         except requests.exceptions.RequestException as e:
             logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
 
         time.sleep(3)
-    data = response.json()
 
-    mono_time = MonotonicTime(datetime.fromisoformat(data["server-date-time"]))
+    # sincronizo el reloj con el coordinador
+    while True:
+        try:
+            response = requests.get(config.URI + '/state', timeout=5)
+            if response.ok:
+                data = response.json()
+                mono_time = MonotonicTime(datetime.fromisoformat(data["server-date-time"]))
+                break
+            else:
+                logger.info(f"Error HTTP {response.status_code}, reintentando...")
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
 
+        time.sleep(3)
+    # sincronizo el reloj del logger
     logger = setup_logger_con_monotonic(mono_time.hora_inicio, mono_time.start_monotonic)
 
-    ## TODO RECUPERAR LAS GLOBALES DEL GENESIS
-
+    # ciclo principal
     while True:
         nuevo_estado = get_current_phase(mono_time.get_hora_actual())
         if nuevo_estado == CoordinatorState.GIVING_TASKS:
@@ -52,14 +69,16 @@ def iniciar ():
                 if hilo:
                     detener_mineria()
                     hilo.join()
+                    logger.info("Mineria finalizada, enviando resultados")
                     # enviar resultados
                     if len(state.mined_blocks) > 0:
                         try:
                             while True:
-                                res = requests.post(URI + "/results", json=state.mined_blocks, timeout=5)
+                                res = requests.post(config.URI + "/results", json=state.mined_blocks, timeout=5)
                                 if res.status_code == 200:
                                     data = res.json()
                                     if data.get("status") == "received":
+                                        logger.info("Resultados recibidos por el coordinador")
                                         break
                                 time.sleep(3)
                         except requests.RequestException as e:
@@ -67,8 +86,7 @@ def iniciar ():
                         finally:
                             state.mined_blocks = []
                 results_delivered = True
-        
-        logger.info(nuevo_estado.name)
+
         time.sleep(1)
 
 def iniciar_minero():
@@ -77,7 +95,7 @@ def iniciar_minero():
     try:
         while True:
             try:
-                response = requests.get(URI + '/tasks', timeout=5)
+                response = requests.get(config.URI + '/tasks', timeout=5)
                 if response.ok:
                     data = response.json()
                     logger.info(f"Tareas recibidas: {data}")
