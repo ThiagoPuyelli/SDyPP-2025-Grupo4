@@ -1,8 +1,10 @@
+import os
 
 INTERVAL_DURATION = 0
 AWAIT_RESPONSE_DURATION = 0
 MAX_MINING_ATTEMPTS = 0
 ACCEPTED_ALGORITHM = ""
 
-URI = "http://coordinator:8000"
-MINER_ID = "123" ## TODO id
+
+URI = os.getenv("COORDINATOR_URI", "http://localhost:8000")
+MINER_ID = os.getenv("MINER_ID", "123")

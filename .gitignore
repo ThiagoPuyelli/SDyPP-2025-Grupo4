@@ -7,3 +7,14 @@ env/
 venv/
 credentials/
 .vscode/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.crash/
+.terraform.lock.hcl
+
+# Credenciales sensibles
+credentials/*
+*secret.yaml

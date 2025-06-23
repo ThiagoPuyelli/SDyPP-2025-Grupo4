@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: miner-config
+  namespace: blockchain
+data:
+  COORDINATOR_URI: "http://coordinador:8000"
+  MINER_ID: "123"

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coordinador
+  namespace: blockchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coordinador
+  template:
+    metadata:
+      labels:
+        app: coordinador
+    spec:
+      containers:
+        - name: coordinador
+          image: matiasherrneder/blockchain-coordinador:1.1
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: blockchain-config
+      nodeSelector:
+        role: infraestructura
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinador
+  namespace: blockchain
+spec:
+  selector:
+    app: coordinador
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP

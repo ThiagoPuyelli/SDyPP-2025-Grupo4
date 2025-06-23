@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minero
+  namespace: blockchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minero
+  template:
+    metadata:
+      labels:
+        app: minero
+    spec:
+      containers:
+        - name: minero
+          image: matiasherrneder/blockchain-minero:1.1
+          envFrom:
+            - configMapRef:
+                name: miner-config
+      nodeSelector:
+        role: mineros
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: minero-hpa
+  namespace: blockchain
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: minero
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

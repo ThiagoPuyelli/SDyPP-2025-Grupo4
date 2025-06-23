@@ -23,3 +23,7 @@ def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
     if block:
         return block
     return {"error": "Bloque no encontrado"}, 404
+
+@router.get("/")
+def root():
+    return {"status": "ok"}
