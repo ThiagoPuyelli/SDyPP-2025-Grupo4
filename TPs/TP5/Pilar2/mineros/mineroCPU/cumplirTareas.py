@@ -1,5 +1,5 @@
 import state
-from fuerzaBruta import conseguirHash
+from mineroGPU.fuerzaBruta import conseguirHash
 from log_config import logger
 import config
 from models import MinedBlock
@@ -16,6 +16,7 @@ def minar(data, detener_mineria):
             0, 
             1000000000, 
             detener_mineria)
+        logger.info(f"{numero_encontrado} {hash_resultado}")
         if numero_encontrado:
             nuevo_bloque = MinedBlock(
                 previous_hash=previousHash,

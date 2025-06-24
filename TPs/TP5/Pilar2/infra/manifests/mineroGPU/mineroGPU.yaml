@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minero
+  namespace: grupo4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minero
+  template:
+    metadata:
+      labels:
+        app: minero
+    spec:
+      runtimeClassName: nvidia
+      containers:
+        - name: minero
+          image: thiagopuyelli/mineroimg_gpu:latest
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          envFrom:
+            - configMapRef:
+                name: miner-config
+#---
+#apiVersion: autoscaling/v2
+#kind: HorizontalPodAutoscaler
+#metadata:
+#  name: minero-hpa
+#  namespace: blockchain
+#spec:
+#  scaleTargetRef:
+#    apiVersion: apps/v1
+#    kind: Deployment
+#    name: minero
+#  minReplicas: 1
+#  maxReplicas: 5
+#  metrics:
+#    - type: Resource
+#      resource:
+#        name: cpu
+#        target:
+#          type: Utilization
+#          averageUtilization: 60

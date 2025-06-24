@@ -59,6 +59,7 @@ def iniciar ():
                     if len(state.mined_blocks.blocks) > 0:
                         try:
                             while True:
+                                logger.info(state.mined_blocks.model_dump())
                                 res = requests.post(config.URI + "/results", json=state.mined_blocks.model_dump(), timeout=5)
                                 if res.status_code == 200:
                                     data = res.json()
