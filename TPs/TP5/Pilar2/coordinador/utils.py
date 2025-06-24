@@ -83,7 +83,13 @@ def create_genesis_block() -> Optional[MinedBlock]:
                 "accepted_algorithm": config.ACCEPTED_ALGORITHM,
             }
         )
+
+        cadena_base = f"{genesis_block.previous_hash} {genesis_transaction.source} {genesis_transaction.target} {genesis_transaction.amount} {genesis_transaction.timestamp} {genesis_transaction.sign} {genesis_block.miner_id}"
+        cadena_completa = cadena_base + str(genesis_block.nonce) + f"{genesis_block.blockchain_config['interval_duration']} {genesis_block.blockchain_config['await_response_duration']} {genesis_block.blockchain_config['max_mining_attempts']} {genesis_block.blockchain_config['accepted_algorithm']}"
+        hash_calculado = calcular_md5(cadena_completa)
         
+        genesis_block.hash = hash_calculado
+
         blockchain.append_block(genesis_block)
         return genesis_block
     return None
