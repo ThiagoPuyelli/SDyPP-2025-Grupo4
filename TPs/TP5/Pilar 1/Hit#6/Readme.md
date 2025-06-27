@@ -12,7 +12,7 @@ Para probarlo en python seria:
 
 py CPU/fuerzaBruta.py
 
-Ejecutando el minero de CPU obtenemos estos resultados:
+Ejecutando el minero de CPU con cadena 'holaquetal' cambiando el prefijo obtenemos estos resultados:
 _ Prefijo: "0", nonce/s: 0.000031 s.
 _ Prefijo: "00", nonce/s:  0.000252 s.
 _ Prefijo: "000", nonce/s: 0.006380 s.
@@ -21,12 +21,12 @@ _ Prefijo: "00000", nonce/s: 0.488750 s.
 _ Prefijo: "000000", nonce/s: 7.958972 s.
 _ Prefijo: "0000000", nonce/s: 254.35034 s.
 
-En cambio con el minero de GPU se obtuvieron los siguientes resultados:
-_ Prefijo: "0", Cant. nonces: 1025, Tiempo de ejecucion 0.18 s, nonce/s: 1,852558636585366e-4 s.
-_ Prefijo: "00", Cant. nonces: 74, Tiempo de ejecucion 0.18 s, nonce/s: 0,0025675675675676 s.
-_ Prefijo: "000", Cant. nonces: 4, Tiempo de ejecucion 0.18 s, nonce/s: 0,2825 s.
-_ Prefijo: "0000", Cant. nonces: 1, Tiempo de ejecucion 0.18 s, nonce/s: 0.8 s.
-_ Prefijo: "00000", Cant. nonces: 1, Tiempo de ejecucion 1.35 s, nonce/s: 1.35 s,.
-_ Prefijo: "000000", Cant. nonces: 1, Tiempo de ejecucion 16.22 s, nonce/s: 16.22 s.
+En cambio con el minero de GPU con cadena 'holaquetal' se obtuvieron los siguientes resultados:
+_ Prefijo: "0", Tiempo de ejecucion 0.094610 s, nonce: 2581.
+_ Prefijo: "00", Tiempo de ejecucion 0.18 s, nonce: 0,0025675675675676 s.
+_ Prefijo: "000", Tiempo de ejecucion 0.18 s, nonce: 0,2825 s.
+_ Prefijo: "0000", Tiempo de ejecucion 0.18 s, nonce: 0.8 s.
+_ Prefijo: "00000", Tiempo de ejecucion 1.35 s, nonce: 1.35 s,.
+_ Prefijo: "000000", Tiempo de ejecucion 1.556371 s, nonce: 1248279992.
 
 En este ejemplo se puede visualizar claramente que CUDA al hacer uso de la GPU, consigue el resultado muchísimo mas rapido que CPU debido al paralelismo que presenta el hardware.

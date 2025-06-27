@@ -217,12 +217,12 @@ __device__ void md5(const uchar* data, const uint size, uint result[4])
 //__device__ unsigned long long total_hashes = 0;
 
 // Kernel para buscar el nonce
-__global__ void find_nonce_kernel(const char* input_str, uint input_len, const char* prefix, uint prefix_len, uint min_nonce, uint max_nonce) {
-    uint idx = min_nonce + blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void find_nonce_kernel(const char* input_str, uint input_len, const char* prefix, uint prefix_len, uint max_nonce) {
+    uint idx = blockIdx.x * blockDim.x + threadIdx.x;
     uint stride = gridDim.x * blockDim.x;
     
     // Cada hilo prueba nonces desde idx hasta max_nonce, incrementando por stride
-    for (uint nonce = idx; nonce >= min_nonce && nonce < max_nonce && atomicAdd(&found, 0) == 0; nonce += stride) {
+    for (uint nonce = idx; nonce < max_nonce && atomicAdd(&found, 0) == 0; nonce += stride) {
         // Construir el mensaje: input_str + nonce (como string)
         char message[256];
         uint message_len = 0;
@@ -301,16 +301,15 @@ __global__ void find_nonce_kernel(const char* input_str, uint input_len, const c
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 5) {
-        printf("Uso: %s <prefijo> <cadena> <minimo> <maximo>\n", argv[0]);
+    if (argc != 4) {
+        printf("Uso: %s <prefijo> <cadena> <maximo>\n", argv[0]);
         printf("Ejemplo: %s 000000 hola 1000000\n", argv[0]);
         return 1;
     }
     
     const char* prefix = argv[1];
     const char* input_str = argv[2];
-    uint min_nonce = atoi(argv[3]);
-    uint max_nonce = atoi(argv[4]);
+    uint max_nonce = atoi(argv[3]);
     uint prefix_len = strlen(prefix);
     uint input_len = strlen(input_str);
 
@@ -344,7 +343,7 @@ int main(int argc, char* argv[]) {
     printf("Configuración del kernel: %d bloques x %d hilos\n", blocks_per_grid, threads_per_block);
     
     // Lanzar kernel
-    find_nonce_kernel<<<blocks_per_grid, threads_per_block>>>(d_input_str, input_len, d_prefix, prefix_len, min_nonce, max_nonce);
+    find_nonce_kernel<<<blocks_per_grid, threads_per_block>>>(d_input_str, input_len, d_prefix, prefix_len, max_nonce);
     
     // Esperar a que termine el kernel
     cudaDeviceSynchronize();
@@ -361,15 +360,15 @@ int main(int argc, char* argv[]) {
     cudaMemcpyFromSymbol(&h_hash, found_hash, 4 * sizeof(uint));
     cudaMemcpyFromSymbol(&h_input, found_input, 256);
     cudaMemcpyFromSymbol(&h_total_hashes, total_hashes, sizeof(unsigned long long));
-    
+
     // Fin del cronómetro
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     
     // Mostrar resultados
-    char hash_str[33];
     if (h_found) {
         // Convertir hash a string hexadecimal
+        char hash_str[33];
         for (int i = 0; i < 4; i++) {
             uint swapped = host_byteswap(h_hash[i]);
             sprintf(hash_str + i * 8, "%08x", swapped);
@@ -381,16 +380,12 @@ int main(int argc, char* argv[]) {
         printf("Hash MD5: %s\n", hash_str);
     } else {
         printf("\nNo se encontro un nonce valido en el rango especificado (0-%u)\n", max_nonce);
-        hash_str[0] = '\0';
     }
 
-    FILE *json_file = fopen("json_output.txt", "w");
-    fprintf(json_file, "{\"numero\": %u, \"hash_md5_result\": \"%s\"}", h_nonce, hash_str);
-    
     // Mostramos el tiempo de ejecución
     printf("Tiempo de ejecución: %.6f segundos\n", elapsed.count());
     //printf("Hashes por segundo: %.2f\n", finRango / elapsed.count());
-
+    
     // Liberar memoria
     cudaFree(d_input_str);
     cudaFree(d_prefix);
