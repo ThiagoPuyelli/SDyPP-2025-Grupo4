@@ -19,7 +19,7 @@ def conseguirHash(hash, cadena, min, max, stop):
         logger.info(compile_process.stderr)
         return None, None
     
-    rango = 10000
+    rango = 1000000
     minActual = min
     maxActual = minActual + rango
     encontrado = False
