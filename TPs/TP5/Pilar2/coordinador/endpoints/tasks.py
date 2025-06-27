@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from models import ActiveTransaction, Transaction
-from state import CoordinatorState, pending_transactions, active_transactions, current_target_prefix, blockchain
+from state import CoordinatorState
+import state
 import state
 
 router = APIRouter()
@@ -8,7 +9,7 @@ router = APIRouter()
 @router.post("/tasks")
 async def submit_transaction(tx: Transaction):
     active_tx = ActiveTransaction(transaction=tx)
-    pending_transactions.put(active_tx)
+    state.pending_transactions.put(active_tx)
     return {"status": "ok"}
 
 @router.get("/tasks")
@@ -20,8 +21,8 @@ async def get_task():
         )
 
     return {
-        "previous_hash": blockchain.get_last_block().hash,
-        "transaction": active_transactions.peek_all(),
-        "target_prefix": current_target_prefix,
+        "previous_hash": state.blockchain.get_last_block().hash,
+        "transaction": state.active_transactions.peek_all(),
+        "target_prefix": state.current_target_prefix,
     }
 

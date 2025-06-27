@@ -2,10 +2,11 @@ import json
 import hashlib
 from datetime import datetime, timezone
 import config
-from state import CoordinatorState, blockchain, current_target_prefix 
+from state import CoordinatorState, blockchain
 from typing import Optional
 from models import MinedBlock, Transaction
-
+import state
+from log_config import logger
 
 def calcular_md5(texto):
     hash_md5 = hashlib.md5()
@@ -25,17 +26,16 @@ def is_valid_hash(block, prefix):
     return True
 
 def adjust_difficulty():
-    # global current_target_prefix
-    # if len(blockchain) < 2:
-    #     return
-    # t1 = datetime.fromisoformat(blockchain[-1]["timestamp"])
-    # t0 = datetime.fromisoformat(blockchain[-2]["timestamp"])
-    # delta = (t1 - t0).total_seconds()
-    # if delta < BLOCK_TARGET_TIME / 2:
-    #     current_target_prefix = "00000"
-    # elif delta > BLOCK_TARGET_TIME * 2:
-    #     current_target_prefix = "000"
-    pass
+    logger.info(f"Ajustando dificultad: {state.current_target_prefix} -> {state.next_target_prefix}")
+    state.current_target_prefix = state.next_target_prefix
+
+def ajustar_ceros(cadena, cantidad):
+    if cantidad > 0:
+        return cadena + '0' * cantidad
+    elif cantidad < 0:
+        return cadena[:cantidad]
+    else:
+        return cadena
 
 def get_starting_phase(now) -> CoordinatorState:
     if now is None:

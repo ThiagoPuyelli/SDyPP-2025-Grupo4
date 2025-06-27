@@ -5,4 +5,4 @@ metadata:
   namespace: grupo4
 data:
   COORDINATOR_URI: "http://35.244.137.250"
-  MINER_ID: "777"
+  MINER_ID: "gpu"

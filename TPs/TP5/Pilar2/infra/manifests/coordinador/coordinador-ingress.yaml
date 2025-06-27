@@ -44,6 +44,13 @@ spec:
             name: coordinador
             port:
               number: 8000
+      - path: /prefix
+        pathType: Prefix
+        backend:
+          service:
+            name: coordinador
+            port:
+              number: 8000
       - path: /docs
         pathType: Prefix
         backend:

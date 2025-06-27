@@ -11,6 +11,7 @@ class CoordinatorState(str, Enum):
     SELECTING_WINNER = "selecting winner and rewarding"
 
 current_target_prefix = "0000"
+next_target_prefix = "0000"
 cicle_state = CoordinatorState.UNSET
 
 redis_client = redis.Redis(

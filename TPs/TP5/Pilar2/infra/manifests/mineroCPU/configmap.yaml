@@ -4,5 +4,5 @@ metadata:
   name: miner-config
   namespace: blockchain
 data:
-  COORDINATOR_URI: "http://coordinador:8000"
-  MINER_ID: "123"
+  COORDINATOR_URI: "http://35.244.137.250"
+  MINER_ID: "cpu"

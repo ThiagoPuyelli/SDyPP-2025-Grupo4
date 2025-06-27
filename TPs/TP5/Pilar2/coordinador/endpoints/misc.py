@@ -15,11 +15,16 @@ def get_state():
         "state": state.cicle_state.name,
         "description": state.cicle_state.value,
         "server-date-time": mono_time.get_hora_actual(),
+        "target-prefix": state.current_target_prefix,
     }
 
 @router.get("/block")
 def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
-    block = state.blockchain.get_block(hash)
+    if (hash == '0'):
+        chain = state.blockchain.get_chain()
+        block = chain.blocks[0]
+    else:
+        block = state.blockchain.get_block(hash)
     if block:
         return block
     return {"error": "Bloque no encontrado"}, 404
@@ -27,3 +32,8 @@ def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
 @router.get("/")
 def root():
     return {"status": "ok"}
+
+@router.put("/prefix")
+async def submit_result(prefijo: str = Query(...)):
+    state.next_target_prefix = prefijo
+    return {"status": "received"}
