@@ -9,10 +9,10 @@ docker build -t coordinadorimg ./coordinador
 docker run --name coordinator --network mining-net -p 8000:8000 --env-file .env coordinadorimg
 
 docker build -f ./mineros/mineroCPU/Dockerfile.cpu -t mineroimg-cpu ./mineros/mineroCPU
-docker run --name miner --network mining-net mineroimg-cpu
+docker run --name miner --network mining-net --env-file .env mineroimg-cpu
 
 docker build -f ./mineros/mineroCPU/Dockerfile.gpu -t mineroimg-gpu ./mineros/mineroCPU
-docker run --name miner --network mining-net mineroimg-gpu
+docker run --name miner --network mining-net --env-file .env mineroimg-gpu
 ```
 
 
