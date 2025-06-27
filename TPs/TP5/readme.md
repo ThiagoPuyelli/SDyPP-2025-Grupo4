@@ -8,8 +8,11 @@ docker-compose --env-file .env up -d
 docker build -t coordinadorimg ./coordinador
 docker run --name coordinator --network mining-net -p 8000:8000 --env-file .env coordinadorimg
 
-docker build -t mineroimg ./mineros/mineroCPU
-docker run --name miner --network mining-net mineroimg
+docker build -f ./mineros/mineroCPU/Dockerfile.cpu -t mineroimg-cpu ./mineros/mineroCPU
+docker run --name miner --network mining-net mineroimg-cpu
+
+docker build -f ./mineros/mineroCPU/Dockerfile.gpu -t mineroimg-gpu ./mineros/mineroCPU
+docker run --name miner --network mining-net mineroimg-gpu
 ```
 
 

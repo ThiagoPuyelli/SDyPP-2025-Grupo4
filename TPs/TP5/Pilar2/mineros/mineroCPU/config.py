@@ -6,5 +6,5 @@ MAX_MINING_ATTEMPTS = 0
 ACCEPTED_ALGORITHM = ""
 
 
-URI = os.getenv("COORDINATOR_URI", "https://da22-179-42-183-51.ngrok-free.app")
-MINER_ID = os.getenv("MINER_ID", "123")
+URI = os.getenv("COORDINATOR_URI", "http://35.244.137.250")
+MINER_ID = os.getenv("MINER_ID", "22")

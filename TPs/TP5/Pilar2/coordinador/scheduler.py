@@ -58,7 +58,6 @@ def handle_selecting_winner():
 
     if best_chain:
         state.blockchain.extend(best_chain)
-        adjust_difficulty()
         logger.info("✔️ Cadena aceptada")
 
         mined_signatures = {block.transaction.sign for block in best_chain.blocks}
@@ -66,6 +65,8 @@ def handle_selecting_winner():
     else:
         logger.info("⚠️ No se recibió cadena válida")
 
+
+    adjust_difficulty()
 
     # Procesar activas: pasar las no minadas a pending, actualizar TTL o descartarlas
     for active_tx in state.active_transactions.get_all_transactions_with_ttl():
