@@ -10,10 +10,10 @@ router = APIRouter()
 @router.post("/results")
 async def submit_result(chain: MinedChain):
     try:
-        if state.cicle_state != CoordinatorState.OPEN_TO_RESULTS:
+        if state.cicle_state != CoordinatorState.OPEN_TO_RESULTS and state.cicle_state != CoordinatorState.GIVING_TASKS:
             raise HTTPException(
                 status_code=403,
-                detail=f"Endpoint not available, wait for {CoordinatorState.OPEN_TO_RESULTS.name} state"
+                detail=f"Endpoint not available, try again"
             )
         
         blocks = chain.blocks
