@@ -8,6 +8,7 @@ from models import MinedBlock
 def minar(data, detener_mineria):
     start = time.perf_counter()
     transactions = data["transaction"]
+    state.cant_transacciones_a_minar = len(transactions)
     previousHash = data["previous_hash"]
     prefix = data["target_prefix"]
     for t in transactions:

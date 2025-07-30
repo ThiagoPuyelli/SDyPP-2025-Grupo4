@@ -10,3 +10,5 @@ class CoordinatorState(str, Enum):
 mined_blocks = MinedChain(blocks=[])
 
 mono_time = None
+
+cant_transacciones_a_minar = 0
