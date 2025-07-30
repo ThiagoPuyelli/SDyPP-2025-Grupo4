@@ -33,7 +33,14 @@ def get_last_interval_start(lastPhase: datetime = None) -> datetime:
 def sync_con_coordinador():
     while True:
         try:
-            response = requests.get(config.URI + '/state', timeout=5)
+            response = requests.get(
+                config.URI + '/state',
+                params={
+                    "miner_id": config.MINER_ID,
+                    "parametro_procesamiento": config.PROCESSING_TIER
+                },
+                timeout=5
+            )
             if response.ok:
                 data = response.json()
                 state.mono_time = MonotonicTime(datetime.fromisoformat(data["server-date-time"]))
@@ -44,5 +51,6 @@ def sync_con_coordinador():
             logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
 
         time.sleep(3)
+
     # sincronizo el reloj del logger
     logger = setup_logger_con_monotonic(state.mono_time.hora_inicio, state.mono_time.start_monotonic)
