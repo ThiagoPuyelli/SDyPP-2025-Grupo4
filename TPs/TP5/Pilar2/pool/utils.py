@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import time
 import requests
+import hashlib
 from monotonic import MonotonicTime
 from log_config import setup_logger_con_monotonic
 import state
@@ -87,3 +88,23 @@ def get_tareas():
     state.cant_transacciones_a_minar = len(state.tareas_disponibles)
     state.previous_hash = data["previous_hash"]
     state.prefix = data["target_prefix"]
+
+def calcular_md5(texto):
+    hash_md5 = hashlib.md5()
+    hash_md5.update(texto.encode('utf-8'))
+    return hash_md5.hexdigest()
+
+def is_valid_hash(block, prefix):
+    t = block.transaction
+    cadena_base = f"{block.previous_hash} {t.source} {t.target} {t.amount} {t.timestamp} {t.sign} {block.miner_id}"
+    cadena_completa = cadena_base + str(block.nonce)
+    hash_calculado = calcular_md5(cadena_completa)
+    
+    if hash_calculado != block.hash:
+        return False
+    if not hash_calculado.startswith(prefix):
+        return False
+    return True
+
+def notify_miners_new_block():
+    return

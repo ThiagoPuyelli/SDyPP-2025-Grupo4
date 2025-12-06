@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 import state
+from models import MinedChain
+from utils import is_valid_hash, notify_miners_new_block
 
 router = APIRouter()
 
@@ -27,7 +29,37 @@ async def get_transaction():
 ## recibir cadenas minadas, evaluarlas, si esta bien cortar el minado de los demas
 @router.post("/results")
 async def submit_result(chain: MinedChain):
-    return
+    if not chain.blocks:
+        raise HTTPException(
+            status_code=400,
+            detail="Empty chain"
+        )
+    
+    block = chain.blocks[0]
+    
+    if block.previous_hash != state.previous_hash:
+        raise HTTPException(
+            status_code=400,
+            detail="Block does not chain"
+        )
+
+    if not is_valid_hash(block, state.prefix):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Block is invalid"
+        )
+
+    state.mined_blocks.blocks.append(block)
+    for t in state.tareas_disponibles:
+        if t.transaction == block.transaction:
+            t.mined = True
+            break
+    state.previous_hash = block.hash
+    
+    notify_miners_new_block()
+
+    logger.info(f"Workload recibida: {block}")
+    return {"status": "received"}
 
 ## pasamanos?
 @router.get("/state")
