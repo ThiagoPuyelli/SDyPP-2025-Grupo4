@@ -6,6 +6,7 @@ from log_config import setup_logger_con_monotonic
 import state
 from state import CoordinatorState
 import config
+from models import ActiveTransaction
 
 def get_current_phase(now) -> CoordinatorState:
     if now == None:
@@ -55,6 +56,34 @@ def sync_con_coordinador():
     # sincronizo el reloj del logger
     logger = setup_logger_con_monotonic(state.mono_time.hora_inicio, state.mono_time.start_monotonic)
 
-def minar():
-    print(state.mineros_activos)
-    return
+def get_tareas():
+    # obtengo tareas
+    data = None
+    try:
+        while True:
+            try:
+                response = requests.get(config.URI + '/tasks', timeout=5)
+                if response.ok:
+                    break
+                else:
+                    logger.info(f"Respuesta inválida del coordinador: {response.status_code}")
+            except requests.RequestException as e:
+                logger.warning(f"Error al conectar con el coordinador: {e}")
+            
+            logger.info("Reintento de conexión con el coordinador en 3 segundos...")
+            time.sleep(3)
+    except Exception as e:
+        logger.error(f"Fallo crítico al obtener tareas: {e}")
+
+    data = response.json()
+    logger.info(f"Tareas recibidas: {data}")
+    
+    state.mined_blocks.blocks.clear()
+    state.tareas_disponibles = []
+    
+    for tx in data["transaction"]:
+        tr = ActiveTransaction(transaction=tx, mined=False)
+        state.tareas_disponibles.append(tr)
+    state.cant_transacciones_a_minar = len(state.tareas_disponibles)
+    state.previous_hash = data["previous_hash"]
+    state.prefix = data["target_prefix"]

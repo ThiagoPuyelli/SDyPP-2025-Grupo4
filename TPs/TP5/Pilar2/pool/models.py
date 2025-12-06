@@ -21,12 +21,14 @@ class MinedBlock(BaseModel):
 class MinedChain(BaseModel):
     blocks: List[MinedBlock]
 
-class ActiveTransaction(BaseModel):
-    transaction: Transaction
-    ttl: int = 0
-
 class Miner(BaseModel):
     id: str
     processing_tier: int
     last_seen: datetime
 
+class MinersList(BaseModel):
+    miners: List[Miner]
+
+class ActiveTransaction(BaseModel):
+    transaction: Transaction
+    mined: bool = False

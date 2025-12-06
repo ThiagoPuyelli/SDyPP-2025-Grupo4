@@ -1,4 +1,4 @@
-from utils import get_current_phase, sync_con_coordinador, minar
+from utils import get_current_phase, sync_con_coordinador, get_tareas
 from state import CoordinatorState
 import state
 from log_config import logger
@@ -37,8 +37,8 @@ def iniciar ():
         nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
         if nuevo_estado == CoordinatorState.GIVING_TASKS:
             if not mining:
-                ## pedir tareas al coordinador y empezar a minar
-                minar()
+                ## pedir tareas al coordinador, no comienza a minar, si no que espera las solicitudes de los mineros
+                get_tareas()
                 results_delivered = False
                 mining = True
                 sync_con_coordinador()
@@ -73,5 +73,3 @@ def enviar_resultados():
             time.sleep(3)
     except requests.RequestException as e:
         logger.error(f"Error al enviar resultados al coordinador: {e}")
-
-iniciar()
