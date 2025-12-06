@@ -39,34 +39,43 @@ def iniciar ():
 
     # ciclo principal
     while True:
-        nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
-        if nuevo_estado == CoordinatorState.GIVING_TASKS:
-            if not mining:
-                hilo = iniciar_minero()
-                results_delivered = False
-                mining = True
-                # vuelvo a coordinar el tiempo
-                sync_con_coordinador()
+        if state.finalizar_mineria_por_pool:
+            if mining:
+                detener_mineria()
+                hilo.join()
+                logger.info("Mineria finalizada por notificación del pool")
+                mining = False
+                results_delivered = True # no son realmente enviados (pero evito enviar si justo coincide que cambia el estado a OPEN_TO_RESULTS)
+                state.finalizar_mineria_por_pool = False
+        else:
+            nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
+            if nuevo_estado == CoordinatorState.GIVING_TASKS:
+                if not mining:
+                    hilo = iniciar_minero()
+                    results_delivered = False
+                    mining = True
+                    # vuelvo a coordinar el tiempo
+                    sync_con_coordinador()
+                else:
+                    if state.cant_transacciones_a_minar > 0 and len(state.mined_blocks.blocks) == state.cant_transacciones_a_minar:
+                        # si ya se han minado todas las transacciones, detengo el hilo del min
+                        mining = False
+                        enviar_resultados()
+                        results_delivered = True
+                        state.cant_transacciones_a_minar = 0
+                    
             else:
-                if state.cant_transacciones_a_minar > 0 and len(state.mined_blocks.blocks) == state.cant_transacciones_a_minar:
-                    # si ya se han minado todas las transacciones, detengo el hilo del min
-                    mining = False
-                    enviar_resultados()
+                mining = False
+                if not results_delivered:
+                    if hilo:
+                        detener_mineria()
+                        hilo.join()
+                        logger.info("Mineria finalizada, enviando resultados")
+                        if len(state.mined_blocks.blocks) > 0:
+                        # enviar resultados
+                            enviar_resultados()
                     results_delivered = True
                     state.cant_transacciones_a_minar = 0
-                
-        else:
-            mining = False
-            if not results_delivered:
-                if hilo:
-                    detener_mineria()
-                    hilo.join()
-                    logger.info("Mineria finalizada, enviando resultados")
-                    if len(state.mined_blocks.blocks) > 0:
-                    # enviar resultados
-                        enviar_resultados()
-                results_delivered = True
-                state.cant_transacciones_a_minar = 0
 
         time.sleep(1)
 
@@ -117,6 +126,3 @@ def iniciar_minero():
 
 def detener_mineria():
     stop_mining_event.set()
-
-
-iniciar()
