@@ -4,6 +4,9 @@ from models import MinedChain, Miner
 from utils import is_valid_hash, notify_miners_new_block
 import os
 import base64
+import requests
+import config
+import time
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
@@ -133,23 +136,35 @@ async def verify_login(id: str = Query(..., description="Miner PK"),
     logger.info(f"Minero registrado exitosamente: {miner}")
     return {"status": "logged_in"}
 
-## pasamanos?
+## pasamanos
 @router.get("/state")
 async def get_task():
-    return
-    if state.cicle_state != CoordinatorState.GIVING_TASKS:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Endpoint not available, wait for {CoordinatorState.GIVING_TASKS.name} state"
-        )
+    while True:
+        try:
+            response = requests.get(
+                config.URI + '/state',
+                timeout=5
+            )
+            if response.ok:
+                return response.json()
+            else:
+                logger.info(f"Error HTTP {response.status_code}, reintentando...")
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
 
-    return {
-        "previous_hash": state.blockchain.get_last_block().hash,
-        "transaction": state.active_transactions.peek_all(),
-        "target_prefix": state.current_target_prefix,
-    }
+        time.sleep(3)
 
 ## pasamanos?
 @router.get("/block")
 def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
-    return
+    while True:
+        try:
+            response = requests.get(config.URI + '/block', params={"hash": 0}, timeout=5)
+            if response.ok:
+                return response.json()
+            else:
+                logger.info(f"Error HTTP {response.status_code}, reintentando...")
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
+
+        time.sleep(3)
