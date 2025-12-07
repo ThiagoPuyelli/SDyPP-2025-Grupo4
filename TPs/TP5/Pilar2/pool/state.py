@@ -16,6 +16,8 @@ cant_transacciones_a_minar = 0
 
 mineros_activos = LocalSubscribers()
 
+mineros_pendientes_de_registro = LocalSubscribers()
+
 # guardan la consulta de las tareas disponibles
 tareas_disponibles = []
 

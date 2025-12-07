@@ -25,6 +25,7 @@ class Miner(BaseModel):
     id: str
     processing_tier: int
     endpoint: str
+    login_challenge: str
 
 class MinersList(BaseModel):
     miners: List[Miner]
