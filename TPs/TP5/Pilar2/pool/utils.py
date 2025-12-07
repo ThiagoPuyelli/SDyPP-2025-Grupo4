@@ -8,6 +8,7 @@ import state
 from state import CoordinatorState
 import config
 from models import ActiveTransaction
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def get_current_phase(now) -> CoordinatorState:
     if now == None:
@@ -106,5 +107,51 @@ def is_valid_hash(block, prefix):
         return False
     return True
 
+
+MAX_RETRIES = 3          # número máximo de intentos
+RETRY_DELAY = 5          # segundos entre intentos
+
+def notify_single_miner(minero):
+    """Notifica a un minero con reintentos limitados. 
+       Devuelve True si respondió, False si falló y debe eliminarse."""
+    
+    for intento in range(1, MAX_RETRIES + 1):
+        try:
+            res = requests.post(minero.endpoint + "/pool_block_mined", timeout=5)
+
+            if res.status_code == 200:
+                data = res.json()
+                if data.get("status") == "received":
+                    logger.info(f"[OK] Minero {minero.id} respondió en el intento {intento}")
+                    return True
+
+        except requests.RequestException as e:
+            logger.warning(f"[WARN] Error al notificar minero {minero.id}, intento {intento}: {e}")
+
+        time.sleep(RETRY_DELAY)
+
+    logger.error(f"[FAIL] Minero {minero.id} no respondió después de {MAX_RETRIES} intentos.")
+    return False
+
 def notify_miners_new_block():
+    """Notifica a todos los mineros en paralelo y elimina los que no respondan."""
+
+    miners = state.mineros_activos.get_all_miners()
+
+    with ThreadPoolExecutor(max_workers=min(20, len(miners))) as executor:
+        futures = {executor.submit(notify_single_miner, m): m for m in miners}
+
+        for future in as_completed(futures):
+            minero = futures[future]
+            ok = False
+
+            try:
+                ok = future.result()
+            except Exception as e:
+                logger.error(f"[ERROR] Excepción inesperada al notificar minero {minero.id}: {e}")
+
+            if not ok:
+                logger.info(f"[REMOVE] Eliminando minero {minero.id} por falta de respuesta")
+                state.mineros_activos.eliminar_minero(minero)
+
     return

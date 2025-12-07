@@ -24,7 +24,7 @@ class MinedChain(BaseModel):
 class Miner(BaseModel):
     id: str
     processing_tier: int
-    last_seen: datetime
+    endpoint: str
 
 class MinersList(BaseModel):
     miners: List[Miner]

@@ -1,12 +1,11 @@
 from fastapi import APIRouter, HTTPException, Query
 import state
-from models import MinedChain
+from models import MinedChain, Miner
 from utils import is_valid_hash, notify_miners_new_block
 
 router = APIRouter()
 
 # a los mineros dar tareas bloque a bloque, solo una. cuando uno termina de minar, el pool deberia notificarles a los demas y dar mas tareas y el bloque minado para que puedan encadenar. 
-# hacer registro de los mineros en el pool
 
 # dar tarea de minado (una sola transaccion)
 @router.get("/tasks")
@@ -28,7 +27,13 @@ async def get_transaction():
 
 ## recibir cadenas minadas, evaluarlas, si esta bien cortar el minado de los demas
 @router.post("/results")
-async def submit_result(chain: MinedChain):
+async def submit_result(chain: MinedChain, miner_id: str = Query(..., description="Miner PK")):
+    if not state.mineros_activos.validar_minero(Miner(id=miner_id, processing_tier=0, endpoint="")):
+        raise HTTPException(
+            status_code=403,
+            detail="Miner not registered, login with /login first"
+        )
+    
     if not chain.blocks:
         raise HTTPException(
             status_code=400,
@@ -61,6 +66,23 @@ async def submit_result(chain: MinedChain):
     logger.info(f"Workload recibida: {block}")
     return {"status": "received"}
 
+## registro de mineros
+@router.post("/login")
+async def login(id: str = Query(..., description="Miner PK"), 
+                endpoint: str = Query(..., description="Miner endpoint URL"),
+                processing_tier: int = Query(..., description="Miner mining speed")):
+    miner = Miner(
+        id=id,
+        processing_tier=processing_tier,
+        endpoint=endpoint
+    )
+    if state.mineros_activos.validar_minero(miner):
+        logger.info(f"Minero ya registrado: {miner}")
+        return {"status": "received"}
+    state.mineros_activos.agregar_minero(miner)
+    logger.info(f"Minero registrado: {miner}")
+    return {"status": "received"}
+
 ## pasamanos?
 @router.get("/state")
 async def get_task():
@@ -79,10 +101,5 @@ async def get_task():
 
 ## pasamanos?
 @router.get("/block")
-def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
-    return
-
-## registro de mineros
-@router.post("/login")
 def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
     return
