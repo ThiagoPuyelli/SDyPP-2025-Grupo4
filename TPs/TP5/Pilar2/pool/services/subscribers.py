@@ -4,7 +4,7 @@ from models import Miner
 
 class Subscribers(ABC):
     @abstractmethod
-    def validar_minero(self, miner: Miner) -> bool:
+    def validar_minero(self, miner_id: str) -> bool:
         pass
     
     @abstractmethod
@@ -16,16 +16,16 @@ class Subscribers(ABC):
         pass
 
     @abstractmethod
-    def eliminar_minero(self, miner: Miner) -> None:
+    def eliminar_minero(self, miner_id: str) -> None:
         pass
 
 class LocalSubscribers(Subscribers):
     def __init__(self):
         self.mineros: List[Miner] = []
     
-    def validar_minero(self, miner: Miner) -> bool:
+    def validar_minero(self, miner_id: str) -> bool:
         for m in self.mineros:
-            if m.id == miner.id:
+            if m.id == miner_id:
                 return True
         return False
 
@@ -35,8 +35,8 @@ class LocalSubscribers(Subscribers):
     def get_all_miners(self) -> List[Miner]:
         return self.mineros
     
-    def eliminar_minero(self, miner: Miner) -> None:
-        self.mineros = [m for m in self.mineros if m.id != miner.id]
+    def eliminar_minero(self, miner_id: str) -> None:
+        self.mineros = [m for m in self.mineros if m.id != miner_id]
     
 # class RedisSubscribers(Subscribers):
     

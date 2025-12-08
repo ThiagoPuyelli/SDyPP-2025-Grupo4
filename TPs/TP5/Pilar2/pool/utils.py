@@ -1,6 +1,6 @@
+from asyncio.log import logger
 from datetime import datetime, timezone
 import time
-import requests
 import hashlib
 from monotonic import MonotonicTime
 from log_config import setup_logger_con_monotonic
@@ -111,47 +111,30 @@ def is_valid_hash(block, prefix):
 MAX_RETRIES = 3          # número máximo de intentos
 RETRY_DELAY = 5          # segundos entre intentos
 
-def notify_single_miner(minero):
-    """Notifica a un minero con reintentos limitados. 
-       Devuelve True si respondió, False si falló y debe eliminarse."""
-    
-    for intento in range(1, MAX_RETRIES + 1):
+async def notify_single_miner(miner_id: str, message: str) -> bool:
+    ws = state.conexiones_ws.get(miner_id)
+    if not ws:
+        logger.warning(f"No WS connection for {miner_id}")
+        return False
+
+    try:
+        await ws.send_text(message)
+        return True
+    except Exception as e:
+        logger.error(f"Error sending WS to {miner_id}: {e}")
+        state.conexiones_ws.pop(miner_id, None)
+        return False
+
+async def notify_miners_new_block():
+    to_remove = []
+
+    for miner_id, ws in state.conexiones_ws.items():
         try:
-            res = requests.post(minero.endpoint + "/pool_block_mined", timeout=5)
+            await ws.send_text("NEW_BLOCK")
+        except:
+            logger.error(f"Failed to notify {miner_id}")
+            to_remove.append(miner_id)
 
-            if res.status_code == 200:
-                data = res.json()
-                if data.get("status") == "received":
-                    logger.info(f"[OK] Minero {minero.id} respondió en el intento {intento}")
-                    return True
-
-        except requests.RequestException as e:
-            logger.warning(f"[WARN] Error al notificar minero {minero.id}, intento {intento}: {e}")
-
-        time.sleep(RETRY_DELAY)
-
-    logger.error(f"[FAIL] Minero {minero.id} no respondió después de {MAX_RETRIES} intentos.")
-    return False
-
-def notify_miners_new_block():
-    """Notifica a todos los mineros en paralelo y elimina los que no respondan."""
-
-    miners = state.mineros_activos.get_all_miners()
-
-    with ThreadPoolExecutor(max_workers=min(20, len(miners))) as executor:
-        futures = {executor.submit(notify_single_miner, m): m for m in miners}
-
-        for future in as_completed(futures):
-            minero = futures[future]
-            ok = False
-
-            try:
-                ok = future.result()
-            except Exception as e:
-                logger.error(f"[ERROR] Excepción inesperada al notificar minero {minero.id}: {e}")
-
-            if not ok:
-                logger.info(f"[REMOVE] Eliminando minero {minero.id} por falta de respuesta")
-                state.mineros_activos.eliminar_minero(minero)
-
-    return
+    # remover desconectados
+    for miner_id in to_remove:
+        state.conexiones_ws.pop(miner_id, None)

@@ -24,8 +24,8 @@ class MinedChain(BaseModel):
 class Miner(BaseModel):
     id: str
     processing_tier: int
-    endpoint: str
-    login_challenge: str
+    class Config:
+        arbitrary_types_allowed = True
 
 class MinersList(BaseModel):
     miners: List[Miner]
