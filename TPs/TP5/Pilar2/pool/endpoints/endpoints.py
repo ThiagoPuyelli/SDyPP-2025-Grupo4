@@ -125,9 +125,11 @@ async def get_task():
 def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
     while True:
         try:
-            response = requests.get(config.URI + '/block', params={"hash": 0}, timeout=5)
+            response = requests.get(config.URI + '/block', params={"hash": hash}, timeout=5)
             if response.ok:
-                return response.json()
+                r_mod = response.json()
+                r_mod["pool_id"] = config.POOL_ID
+                return r_mod
             else:
                 logger.info(f"Error HTTP {response.status_code}, reintentando...")
         except requests.exceptions.RequestException as e:

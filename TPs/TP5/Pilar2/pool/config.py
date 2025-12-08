@@ -7,5 +7,5 @@ ACCEPTED_ALGORITHM = ""
 
 
 URI = os.getenv("COORDINATOR_URI", "http://35.244.137.250")
-MINER_ID = os.getenv("MINER_ID", "9001")
+POOL_ID = os.getenv("POOL_ID", "9002")
 PROCESSING_TIER = os.getenv("PROCESSING_TIER", 1)

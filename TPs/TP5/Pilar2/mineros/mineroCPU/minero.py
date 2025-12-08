@@ -1,4 +1,3 @@
-from datetime import datetime
 from cumplirTareas import minar
 from utils import get_current_phase, sync_con_coordinador
 from state import CoordinatorState
@@ -8,10 +7,13 @@ import time
 import requests
 import threading
 import config
+from minero_websocket import ws_listener, ws_connected_event
 
 stop_mining_event = threading.Event()
 
 def iniciar ():
+    global ws_connected_event
+
     hilo = None
     mining = False
     results_delivered = False
@@ -26,6 +28,7 @@ def iniciar ():
                 config.AWAIT_RESPONSE_DURATION = data["blockchain_config"]["await_response_duration"]
                 config.MAX_MINING_ATTEMPTS = data["blockchain_config"]["max_mining_attempts"]
                 config.ACCEPTED_ALGORITHM = data["blockchain_config"]["accepted_algorithm"]
+                if data["pool_id"]: state.pool_id = data["pool_id"]
                 break
             else:
                 logger.info(f"Error HTTP {response.status_code}, reintentando...")
@@ -34,11 +37,31 @@ def iniciar ():
 
         time.sleep(3)
 
+    # Crear WS solo si es pool
+    if state.pool_id:
+        ws_connected_event = threading.Event()
+
+        ws_thread = threading.Thread(target=ws_listener, daemon=True)
+        ws_thread.start()
+
+        while not ws_connected_event.is_set():
+            logger.info("Esperando conexión WS con pool...")
+            time.sleep(3)
+        logger.info("WS conectado correctamente...")
+
     # sincronizo el reloj con el coordinador
     sync_con_coordinador()
 
     # ciclo principal
     while True:
+        if state.pool_id and not ws_connected_event.is_set():
+            if mining:
+                logger.warning("WS perdido. Deteniendo minería.")
+                detener_mineria()
+                hilo.join()
+                mining = False
+                results_delivered = True
+
         if state.finalizar_mineria_por_pool:
             if mining:
                 detener_mineria()
@@ -126,3 +149,6 @@ def iniciar_minero():
 
 def detener_mineria():
     stop_mining_event.set()
+
+
+iniciar()

@@ -14,3 +14,5 @@ mono_time = None
 cant_transacciones_a_minar = 0
 
 finalizar_mineria_por_pool = False
+
+pool_id = None
