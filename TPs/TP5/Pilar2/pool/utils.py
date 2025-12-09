@@ -1,14 +1,13 @@
-from asyncio.log import logger
 from datetime import datetime, timezone
 import time
 import hashlib
 from monotonic import MonotonicTime
-from log_config import setup_logger_con_monotonic
+from log_config import setup_logger_con_monotonic, logger
 import state
 from state import CoordinatorState
 import config
 from models import ActiveTransaction
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import requests
 
 def get_current_phase(now) -> CoordinatorState:
     if now == None:
@@ -39,7 +38,7 @@ def sync_con_coordinador():
             response = requests.get(
                 config.URI + '/state',
                 params={
-                    "miner_id": config.MINER_ID,
+                    "miner_id": config.POOL_ID,
                     "parametro_procesamiento": config.PROCESSING_TIER
                 },
                 timeout=5

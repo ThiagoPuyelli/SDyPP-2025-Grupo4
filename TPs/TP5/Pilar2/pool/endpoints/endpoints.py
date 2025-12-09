@@ -7,6 +7,7 @@ import config
 import time
 import asyncio
 from fastapi import WebSocket, WebSocketDisconnect
+from log_config import logger
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ async def get_transaction():
         )
     return {
         "previous_hash": state.previous_hash,
-        "transaction": tarea,
+        "transaction": [tarea],
         "target_prefix": state.prefix,
     }
 

@@ -7,7 +7,7 @@ import time
 import requests
 import threading
 import config
-from minero_websocket import ws_listener, ws_connected_event
+import minero_websocket
 
 stop_mining_event = threading.Event()
 
@@ -28,7 +28,8 @@ def iniciar ():
                 config.AWAIT_RESPONSE_DURATION = data["blockchain_config"]["await_response_duration"]
                 config.MAX_MINING_ATTEMPTS = data["blockchain_config"]["max_mining_attempts"]
                 config.ACCEPTED_ALGORITHM = data["blockchain_config"]["accepted_algorithm"]
-                if data["pool_id"]: state.pool_id = data["pool_id"]
+                
+                state.pool_id = data.get("pool_id", None)
                 break
             else:
                 logger.info(f"Error HTTP {response.status_code}, reintentando...")
@@ -39,12 +40,12 @@ def iniciar ():
 
     # Crear WS solo si es pool
     if state.pool_id:
-        ws_connected_event = threading.Event()
+        minero_websocket.ws_connected_event.clear()
 
-        ws_thread = threading.Thread(target=ws_listener, daemon=True)
+        ws_thread = threading.Thread(target=minero_websocket.ws_listener, daemon=True)
         ws_thread.start()
 
-        while not ws_connected_event.is_set():
+        while not minero_websocket.ws_connected_event.is_set():
             logger.info("Esperando conexión WS con pool...")
             time.sleep(3)
         logger.info("WS conectado correctamente...")
@@ -54,7 +55,7 @@ def iniciar ():
 
     # ciclo principal
     while True:
-        if state.pool_id and not ws_connected_event.is_set():
+        if state.pool_id and not minero_websocket.ws_connected_event.is_set():
             if mining:
                 logger.warning("WS perdido. Deteniendo minería.")
                 detener_mineria()
@@ -106,7 +107,12 @@ def enviar_resultados():
     try:
         while True:
             logger.info(state.mined_blocks.model_dump())
-            res = requests.post(config.URI + "/results", json=state.mined_blocks.model_dump(), timeout=5)
+            res = requests.post(
+                config.URI + "/results", 
+                json=state.mined_blocks.model_dump(), 
+                params={"miner_id": config.MINER_ID},
+                timeout=5
+            )
             if res.status_code == 200:
                 data = res.json()
                 if data.get("status") == "received":
