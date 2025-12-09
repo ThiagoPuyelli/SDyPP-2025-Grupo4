@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pool
+  namespace: blockchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pool
+  template:
+    metadata:
+      labels:
+        app: pool
+    spec:
+      containers:
+        - name: pool
+          image: matiasherrneder/blockchain-pool:1.0
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: pool-config
+      nodeSelector:
+        role: pool
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pool
+  namespace: blockchain
+spec:
+  selector:
+    app: pool
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP
