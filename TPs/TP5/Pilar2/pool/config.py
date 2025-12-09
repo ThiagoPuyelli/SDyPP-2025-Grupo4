@@ -6,6 +6,6 @@ MAX_MINING_ATTEMPTS = 0
 ACCEPTED_ALGORITHM = ""
 
 
-URI = os.getenv("COORDINATOR_URI", "http://35.244.137.250")
+URI = os.getenv("HOST_URI", "http://35.244.137.250")
 POOL_ID = os.getenv("POOL_ID", "9002")
 PROCESSING_TIER = os.getenv("PROCESSING_TIER", 1)

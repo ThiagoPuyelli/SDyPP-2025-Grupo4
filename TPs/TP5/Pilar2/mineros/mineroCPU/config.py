@@ -6,6 +6,7 @@ MAX_MINING_ATTEMPTS = 0
 ACCEPTED_ALGORITHM = ""
 
 
-URI = os.getenv("COORDINATOR_URI", "http://35.244.137.250")
+URI = os.getenv("HOST_URI", "http://35.244.137.250")
+# URI = os.getenv("COORDINATOR_URI", "http://coordinator:8000") # local testing con docker-compose
 MINER_ID = os.getenv("MINER_ID", "22")
-PROCESSING_TIER = ("PROCESSING_TIER", 2)
+PROCESSING_TIER = int(os.getenv("PROCESSING_TIER", 2))
