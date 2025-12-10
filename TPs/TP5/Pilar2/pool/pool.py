@@ -1,4 +1,4 @@
-from utils import get_current_phase, sync_con_coordinador, get_tareas
+from utils import get_current_phase, sync_con_coordinador, get_tareas, calcular_nonce_ranges
 from state import CoordinatorState
 import state
 from log_config import logger
@@ -41,6 +41,7 @@ def iniciar ():
                 get_tareas()
                 results_delivered = False
                 mining = True
+                state.nonce_start = 0
                 sync_con_coordinador()
             elif state.cant_transacciones_a_minar > 0 and len(state.mined_blocks.blocks) == state.cant_transacciones_a_minar:
                 ## si termino enviar tareas

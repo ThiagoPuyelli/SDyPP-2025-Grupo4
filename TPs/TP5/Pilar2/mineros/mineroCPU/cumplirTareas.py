@@ -11,6 +11,8 @@ def minar(data, detener_mineria):
     state.cant_transacciones_a_minar = len(transactions)
     previousHash = data["previous_hash"]
     prefix = data["target_prefix"]
+    nonce_start = data.get("nonce_start", None)
+    nonce_end = data.get("nonce_end", None)
     for t in transactions:
         if detener_mineria.is_set(): 
             end = time.perf_counter()
@@ -19,8 +21,8 @@ def minar(data, detener_mineria):
         numero_encontrado, hash_resultado = conseguirHash(
             prefix, 
             f"{previousHash} {t['source']} {t['target']} {t['amount']} {t['timestamp']} {t['sign']} {config.MINER_ID}", 
-            0, 
-            1000000000,
+            nonce_start if nonce_start is not None else 0, 
+            nonce_end if nonce_end is not None else 1000000000,
             detener_mineria)
         logger.info(f"{numero_encontrado} {hash_resultado}")
         if numero_encontrado:

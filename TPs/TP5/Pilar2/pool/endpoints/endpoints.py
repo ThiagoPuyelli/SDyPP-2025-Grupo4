@@ -25,10 +25,15 @@ async def get_transaction():
             status_code=404,
             detail="No hay tareas disponibles para minar"
         )
+    
+    state.nonce_start += 1000000000
+    
     return {
         "previous_hash": state.previous_hash,
         "transaction": [tarea],
         "target_prefix": state.prefix,
+        "nonce_start": state.nonce_start - 1000000000,
+        "nonce_end": state.nonce_start
     }
 
 ## recibir cadenas minadas, evaluarlas, si esta bien cortar el minado de los demas
