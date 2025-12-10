@@ -18,7 +18,6 @@ jobs:
   # ---------------------------
   build-cpu:
     runs-on: ubuntu-latest
-    environment: secrets
 
     steps:
       - name: Checkout Code
