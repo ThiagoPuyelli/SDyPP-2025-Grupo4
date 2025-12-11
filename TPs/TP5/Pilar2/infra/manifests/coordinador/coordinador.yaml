@@ -10,6 +10,27 @@ spec:
       app: coordinador
   template:
     metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "coordinador-role"
+
+        vault.hashicorp.com/agent-inject-secret-RABBIT_PASS: "secret/data/blockchain/RABBIT_PASS"
+        vault.hashicorp.com/agent-inject-template-RABBIT_PASS: |
+          {{- with secret "secret/data/blockchain/RABBIT_PASS" -}}
+          {{ .Data.data.RABBIT_PASS }}
+          {{- end -}}
+
+        vault.hashicorp.com/agent-inject-secret-RABBIT_USER: "secret/data/blockchain/RABBIT_USER"
+        vault.hashicorp.com/agent-inject-template-RABBIT_USER: |
+          {{- with secret "secret/data/blockchain/RABBIT_USER" -}}
+          {{ .Data.data.RABBIT_USER }}
+          {{- end -}}
+
+        vault.hashicorp.com/agent-inject-secret-REDIS_DB: "secret/data/blockchain/REDIS_DB"
+        vault.hashicorp.com/agent-inject-template-REDIS_DB: |
+          {{- with secret "secret/data/blockchain/REDIS_DB" -}}
+          {{ .Data.data.REDIS_DB }}
+          {{- end -}}
       labels:
         app: coordinador
     spec:
@@ -21,6 +42,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: blockchain-config
+          env:
+            - name: RABBIT_PASS_FILE
+              value: /vault/secrets/RABBIT_PASS
+            - name: RABBIT_USER_FILE
+              value: /vault/secrets/RABBIT_USER
+            - name: REDIS_DB_FILE
+              value: /vault/secrets/REDIS_DB
       nodeSelector:
         role: infraestructura
 ---
