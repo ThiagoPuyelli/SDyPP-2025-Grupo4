@@ -1,12 +1,10 @@
 from enum import Enum
 from typing import TYPE_CHECKING
+from services.secret_service import get_secret
 from services.database_service import LocalBlockchainDatabase, LocalReceivedChainsDatabase, RedisBlockchainDatabase, RedisReceivedChainsDatabase, RedisActiveTransactions
 from services.queue_service import LocalTransactionQueue, RabbitTransactionQueue
 import os
 import redis
-
-if TYPE_CHECKING:
-    from utils import get_secret
 
 class CoordinatorState(str, Enum):
     UNSET = "server starting, only accepting transactions to queue"
