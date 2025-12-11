@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: coordinador
-          image: matiasherrneder/blockchain-coordinador:8f3e74d
+          image: matiasherrneder/blockchain-coordinador:a2cf0c5
           ports:
             - containerPort: 8000
           envFrom:
