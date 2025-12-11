@@ -37,7 +37,6 @@ def ws_listener():
                 msg = ws.recv()  # Espera comandos opcionales del pool
                 logger.info(f"Mensaje recibido por WS: {msg}")
 
-                # Si el pool manda STOP_MINING lo manejás así:
                 if msg == "STOP_MINING":
                     state.finalizar_mineria_por_pool = True
 
