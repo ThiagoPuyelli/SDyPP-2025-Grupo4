@@ -1,12 +1,14 @@
 import json
 import hashlib
 from datetime import datetime, timezone
+from pathlib import Path
 import config
 from state import CoordinatorState, blockchain
 from typing import Optional
 from models import MinedBlock, Transaction
 import state
 from log_config import logger
+import os
 
 def calcular_md5(texto):
     hash_md5 = hashlib.md5()
@@ -93,3 +95,11 @@ def create_genesis_block() -> Optional[MinedBlock]:
         blockchain.append_block(genesis_block)
         return genesis_block
     return None
+    
+def get_secret(name: str, default: str | None = None) -> str | None:
+    file_path = os.environ.get(name)
+    if file_path:
+        p = Path(file_path)
+        if p.exists():
+            return p.read_text().strip()
+    return os.environ.get(name, default)
