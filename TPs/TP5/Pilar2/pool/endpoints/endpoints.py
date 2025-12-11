@@ -11,8 +11,6 @@ from log_config import logger
 
 router = APIRouter()
 
-# a los mineros dar tareas bloque a bloque, solo una. cuando uno termina de minar, el pool deberia notificarles a los demas y dar mas tareas y el bloque minado para que puedan encadenar. 
-
 ## dar tarea de minado (una sola transaccion)
 @router.get("/tasks")
 async def get_transaction():
