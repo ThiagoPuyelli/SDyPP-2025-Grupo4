@@ -1,5 +1,6 @@
 from enum import Enum
-from utils import get_secret
+from typing import TYPE_CHECKING
+from services.secret_service import get_secret
 from services.database_service import LocalBlockchainDatabase, LocalReceivedChainsDatabase, RedisBlockchainDatabase, RedisReceivedChainsDatabase, RedisActiveTransactions
 from services.queue_service import LocalTransactionQueue, RabbitTransactionQueue
 import os
