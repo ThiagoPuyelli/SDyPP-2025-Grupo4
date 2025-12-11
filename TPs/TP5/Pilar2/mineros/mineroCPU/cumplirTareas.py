@@ -22,7 +22,7 @@ def minar(data, detener_mineria):
             prefix, 
             f"{previousHash} {t['source']} {t['target']} {t['amount']} {t['timestamp']} {t['sign']} {config.MINER_ID}", 
             nonce_start if nonce_start is not None else 0, 
-            nonce_end if nonce_end is not None else 1000000000,
+            nonce_end if nonce_end is not None else 1000000000000000000, #1000000000,
             detener_mineria)
         logger.info(f"{numero_encontrado} {hash_resultado}")
         if numero_encontrado:
