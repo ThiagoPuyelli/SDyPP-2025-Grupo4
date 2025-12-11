@@ -38,7 +38,7 @@ jobs:
 
       - name: Build and Push CPU Image
         run: |
-          docker build -t $IMAGE_CPU:${{ steps.vars.outputs.TAG }} ./TPs/TP5/Pilar2/mineros/mineroCPU/
+          docker build -f ./TPs/TP5/Pilar2/mineros/mineroCPU/Dockerfile.cpu -t $IMAGE_CPU:${{ steps.vars.outputs.TAG }} ./TPs/TP5/Pilar2/mineros/mineroCPU/
           docker push $IMAGE_CPU:${{ steps.vars.outputs.TAG }}
 
       - name: Update CPU Kubernetes Manifest
@@ -74,7 +74,7 @@ jobs:
 
       - name: Build and Push GPU Image
         run: |
-          docker build -t $IMAGE_GPU:${{ steps.vars.outputs.TAG }} ./TPs/TP5/Pilar2/mineros/mineroCPU/
+          docker build -f ./TPs/TP5/Pilar2/mineros/mineroCPU/Dockerfile.gpu -t $IMAGE_GPU:${{ steps.vars.outputs.TAG }} ./TPs/TP5/Pilar2/mineros/mineroCPU/
           docker push $IMAGE_GPU:${{ steps.vars.outputs.TAG }}
 
       - name: Update GPU Kubernetes Manifest
