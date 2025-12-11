@@ -7,15 +7,15 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: minero
+      app: minero-gpu
   template:
     metadata:
       labels:
-        app: minero
+        app: minero-gpu
     spec:
       runtimeClassName: nvidia
       containers:
-        - name: minero
+        - name: minero-gpu
           image: matiasherrneder/blockchain-minero-gpu:0335a17
           resources:
             limits:
