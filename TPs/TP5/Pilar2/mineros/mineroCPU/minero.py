@@ -70,7 +70,7 @@ def iniciar ():
                 logger.info("Mineria finalizada por notificación del pool")
                 mining = False
                 results_delivered = True # no son realmente enviados (pero evito enviar si justo coincide que cambia el estado a OPEN_TO_RESULTS)
-                state.finalizar_mineria_por_pool = False
+                state.finalizar_mineria_por_pool = False 
         else:
             nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
             if nuevo_estado == CoordinatorState.GIVING_TASKS:
