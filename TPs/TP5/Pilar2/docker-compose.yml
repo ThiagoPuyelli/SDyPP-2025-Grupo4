@@ -34,7 +34,7 @@ services:
       retries: 20
 
   coordinador:
-    image: matiasherrneder/blockchain-coordinador:1.10
+    image: matiasherrneder/blockchain-coordinador:08a039c
     container_name: coordinador
     networks:
       - mining-net
