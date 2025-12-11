@@ -7,6 +7,9 @@ on:
     paths:
       - TPs/TP5/Pilar2/pool/**
 
+permissions:
+  contents: write
+
 env:
   IMAGE_NAME: matiasherrneder/blockchain-pool
 

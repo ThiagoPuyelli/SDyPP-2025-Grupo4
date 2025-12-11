@@ -7,6 +7,9 @@ on:
     paths:
       - TPs/TP5/Pilar2/mineros/mineroCPU/**
 
+permissions:
+  contents: write
+
 env:
   IMAGE_CPU: matiasherrneder/blockchain-minero
   IMAGE_GPU: matiasherrneder/blockchain-minero-gpu
