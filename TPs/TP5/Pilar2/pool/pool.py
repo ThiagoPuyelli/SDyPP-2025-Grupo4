@@ -1,4 +1,4 @@
-from utils import get_current_phase, sync_con_coordinador, get_tareas, calcular_nonce_ranges
+from utils import get_current_phase, sync_con_coordinador, get_tareas
 from state import CoordinatorState
 import state
 from log_config import logger
