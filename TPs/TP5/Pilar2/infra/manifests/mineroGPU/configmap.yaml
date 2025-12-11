@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: miner-config
-  namespace: grupo4
+  namespace: blockchain
 data:
   HOST_URI: "http://35.244.137.250"
   MINER_ID: "gpu"
