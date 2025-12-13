@@ -83,7 +83,6 @@ def iniciar ():
             if nuevo_estado == CoordinatorState.GIVING_TASKS:
                 if not mining and not results_delivered:
                     hilo = iniciar_minero()
-                    results_delivered = False
                     mining = True
                     # vuelvo a coordinar el tiempo
                     sync_con_coordinador()
@@ -97,7 +96,8 @@ def iniciar ():
                     
             else:
                 mining = False
-                if not results_delivered:
+                results_delivered = False
+                if state.cant_transacciones_a_minar > 0 and:
                     if hilo:
                         detener_mineria()
                         hilo.join()
@@ -105,7 +105,6 @@ def iniciar ():
                         if len(state.mined_blocks.blocks) > 0:
                         # enviar resultados
                             enviar_resultados()
-                    results_delivered = True
                     state.cant_transacciones_a_minar = 0
 
         time.sleep(1)
