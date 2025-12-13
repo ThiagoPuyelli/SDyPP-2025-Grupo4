@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-bootstrap
+  namespace: secret
+spec:
+  template:
+    spec:
+      serviceAccountName: vault-auth
+      restartPolicy: OnFailure
+      containers:
+        - name: vault-bootstrap
+          image: hashicorp/vault:1.15.4
+          env:
+            - name: VAULT_ADDR
+              value: http://vault.secret.svc:8200
+            - name: VAULT_TOKEN
+              value: root
+          envFrom:
+            - secretRef:
+                name: vault-env
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -euo pipefail
+
+              echo "Esperando a que Vault esté listo..."
+              for i in $(seq 1 60); do
+                if vault status >/dev/null 2>&1; then
+                  break
+                fi
+                sleep 2
+              done
+
+              vault status
+
+              echo "Habilitando y configurando el KV en secret/..."
+              vault secrets enable -path=secret kv-v2 >/dev/null 2>&1 || true
+
+              cat > /tmp/blockchain-policy.hcl <<'EOF'
+              path "secret/data/blockchain" {
+                capabilities = ["read"]
+              }
+              path "secret/data/blockchain/*" {
+                capabilities = ["read"]
+              }
+              EOF
+              vault policy write blockchain-policy /tmp/blockchain-policy.hcl
+
+              echo "Configurando autenticación Kubernetes..."
+              vault auth enable kubernetes >/dev/null 2>&1 || true
+              vault write auth/kubernetes/config \
+                token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+                kubernetes_host="https://${KUBERNETES_PORT_443_TCP_ADDR}:443" \
+                kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+              vault write auth/kubernetes/role/blockchain-role \
+                bound_service_account_names="coordinador-sa,rabbitmq-sa" \
+                bound_service_account_namespaces="blockchain" \
+                policies="blockchain-policy" \
+                ttl="24h"
+
+              echo "Cargando secretos desde variables de entorno..."
+              vault kv put secret/blockchain \
+                RABBIT_USER="${RABBIT_USER}" \
+                RABBIT_PASS="${RABBIT_PASS}" \
+                REDIS_DB="${REDIS_DB}"
+
+              echo "Bootstrap de Vault terminado."

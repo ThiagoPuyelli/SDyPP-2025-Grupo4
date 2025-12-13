@@ -10,30 +10,61 @@ spec:
       app: coordinador
   template:
     metadata:
-      annotations:
-        vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "coordinador-role"
-
-        vault.hashicorp.com/agent-inject-secret-RABBIT_PASS: "secret/data/blockchain/RABBIT_PASS"
-        vault.hashicorp.com/agent-inject-template-RABBIT_PASS: |
-          {{- with secret "secret/data/blockchain/RABBIT_PASS" -}}
-          {{ .Data.data.RABBIT_PASS }}
-          {{- end -}}
-
-        vault.hashicorp.com/agent-inject-secret-RABBIT_USER: "secret/data/blockchain/RABBIT_USER"
-        vault.hashicorp.com/agent-inject-template-RABBIT_USER: |
-          {{- with secret "secret/data/blockchain/RABBIT_USER" -}}
-          {{ .Data.data.RABBIT_USER }}
-          {{- end -}}
-
-        vault.hashicorp.com/agent-inject-secret-REDIS_DB: "secret/data/blockchain/REDIS_DB"
-        vault.hashicorp.com/agent-inject-template-REDIS_DB: |
-          {{- with secret "secret/data/blockchain/REDIS_DB" -}}
-          {{ .Data.data.REDIS_DB }}
-          {{- end -}}
       labels:
         app: coordinador
     spec:
+      serviceAccountName: coordinador-sa
+      initContainers:
+        - name: vault-agent-init
+          image: hashicorp/vault:1.15.4
+          env:
+            - name: VAULT_ADDR
+              value: http://vault.secret.svc:8200
+          volumeMounts:
+            - name: vault-config
+              mountPath: /vault/config
+            - name: vault-secrets
+              mountPath: /vault/secrets
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              cat > /vault/config/agent.hcl <<'EOF'
+              exit_after_auth = true
+              pid_file = "/tmp/vault-agent.pid"
+
+              auto_auth {
+                method "kubernetes" {
+                  mount_path = "auth/kubernetes"
+                  config = {
+                    role = "blockchain-role"
+                  }
+                }
+                sink "file" {
+                  config = {
+                    path = "/vault/secrets/.token"
+                  }
+                }
+              }
+
+              template {
+                destination = "/vault/secrets/RABBIT_PASS"
+                contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.RABBIT_PASS }}{{- end }}"
+              }
+
+              template {
+                destination = "/vault/secrets/RABBIT_USER"
+                contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.RABBIT_USER }}{{- end }}"
+              }
+
+              template {
+                destination = "/vault/secrets/REDIS_DB"
+                contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.REDIS_DB }}{{- end }}"
+              }
+              EOF
+
+              vault agent -config=/vault/config/agent.hcl -log-level=info
       containers:
         - name: coordinador
           image: matiasherrneder/blockchain-coordinador:08a039c
@@ -49,8 +80,17 @@ spec:
               value: /vault/secrets/RABBIT_USER
             - name: REDIS_DB_FILE
               value: /vault/secrets/REDIS_DB
+          volumeMounts:
+            - name: vault-secrets
+              mountPath: /vault/secrets
+              readOnly: true
       nodeSelector:
         role: infraestructura
+      volumes:
+        - name: vault-config
+          emptyDir: {}
+        - name: vault-secrets
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
