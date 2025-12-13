@@ -97,7 +97,7 @@ def iniciar ():
             else:
                 mining = False
                 results_delivered = False
-                if state.cant_transacciones_a_minar > 0 and:
+                if state.cant_transacciones_a_minar > 0:
                     if hilo:
                         detener_mineria()
                         hilo.join()
