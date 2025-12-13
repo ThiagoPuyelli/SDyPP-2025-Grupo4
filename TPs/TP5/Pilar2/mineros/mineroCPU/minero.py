@@ -81,7 +81,7 @@ def iniciar ():
         if not state.pool_id:
             nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
             if nuevo_estado == CoordinatorState.GIVING_TASKS:
-                if not mining:
+                if not mining and not results_delivered:
                     hilo = iniciar_minero()
                     results_delivered = False
                     mining = True
