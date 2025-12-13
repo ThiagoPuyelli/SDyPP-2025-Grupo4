@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: pool-config
-  namespace: blockchain
+  namespace: pool
 data:
   HOST_URI: "http://34.110.193.180"
   PROCESSING_TIER: "1"

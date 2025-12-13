@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pool
-  namespace: blockchain
+  namespace: pool
 spec:
   replicas: 1
   selector:
@@ -22,13 +22,13 @@ spec:
             - configMapRef:
                 name: pool-config
       nodeSelector:
-        role: pool
+        role: infraestructura
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: pool
-  namespace: blockchain
+  namespace: pool
 spec:
   selector:
     app: pool
