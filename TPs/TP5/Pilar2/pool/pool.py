@@ -5,6 +5,8 @@ from log_config import logger
 import time
 import requests
 import config
+import pika
+import json
 
 
 def iniciar ():
@@ -31,6 +33,19 @@ def iniciar ():
 
     # sincronizo el reloj con el coordinador
     sync_con_coordinador()
+
+    # creo canal para el exchange
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(
+            host=config.RABBIT_HOST,
+            credentials=pika.PlainCredentials(
+                username=config.RABBIT_USER,
+                password=config.RABBIT_PASS
+            )
+        )
+    )
+
+    state.queue_channel = connection.channel()
 
     # ciclo principal
     while True:

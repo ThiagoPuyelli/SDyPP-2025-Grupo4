@@ -19,6 +19,8 @@ cant_transacciones_a_minar = 0
 mineros_activos = LocalSubscribers()
 conexiones_ws: Dict[str, WebSocket] = {}
 
+queue_channel = None
+
 # guardan la consulta de las tareas disponibles
 tareas_disponibles = []
 previous_hash = ""

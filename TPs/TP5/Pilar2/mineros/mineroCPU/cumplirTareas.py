@@ -36,7 +36,7 @@ def minar(data, detener_mineria):
             state.mined_blocks.blocks.append(nuevo_bloque)
             previousHash = hash_resultado
             logger.info(f"Transaccion minada, bloque: {nuevo_bloque}")
-    if detener_mineria.is_set():
+    if not detener_mineria.is_set():
         logger.info("Se termino de minar sin ser interrumpido")
     end = time.perf_counter()
     logger.info(f"TIEMPO TOTAL DE MINADO: {end - start:.2f} segundos")

@@ -7,7 +7,7 @@ import time
 import requests
 import threading
 import config
-import minero_websocket
+import pika
 
 stop_mining_event = threading.Event()
 
@@ -38,40 +38,47 @@ def iniciar ():
 
         time.sleep(3)
 
-    # Crear WS solo si es pool
+    # crear cola efimera solo si es con pool
     if state.pool_id:
-        minero_websocket.ws_connected_event.clear()
 
-        ws_thread = threading.Thread(target=minero_websocket.ws_listener, daemon=True)
-        ws_thread.start()
+        credentials = pika.PlainCredentials(
+            username=config.RABBIT_USER,
+            password=config.RABBIT_PASS
+        )
 
-        while not minero_websocket.ws_connected_event.is_set():
-            logger.info("Esperando conexión WS con pool...")
-            time.sleep(3)
-        logger.info("WS conectado correctamente...")
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host=config.RABBIT_HOST, 
+            credentials=credentials)
+            )
+        channel = connection.channel()
+        
+        result = channel.queue_declare(
+            queue="",
+            exclusive=True,
+            auto_delete=True
+        )
+
+        queue_name = result.method.queue
+
+        channel.queue_bind(
+            exchange="blockchain.exchange",
+            queue=queue_name
+        )
+
+        channel.basic_consume(
+            queue=queue_name,
+            on_message_callback=frenar_minado_pool,
+            auto_ack=True
+        )
+
+        channel.start_consuming()
 
     # sincronizo el reloj con el coordinador
     sync_con_coordinador()
 
-    # ciclo principal
+    # ciclo principal (sin pool)
     while True:
-        if state.pool_id and not minero_websocket.ws_connected_event.is_set():
-            if mining:
-                logger.warning("WS perdido. Deteniendo minería.")
-                detener_mineria()
-                hilo.join()
-                mining = False
-                results_delivered = True
-
-        if state.finalizar_mineria_por_pool:
-            if mining:
-                detener_mineria()
-                hilo.join()
-                logger.info("Mineria finalizada por notificación del pool")
-                mining = False
-                results_delivered = True # no son realmente enviados (pero evito enviar si justo coincide que cambia el estado a OPEN_TO_RESULTS)
-                state.finalizar_mineria_por_pool = False 
-        else:
+        if not state.pool_id:
             nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
             if nuevo_estado == CoordinatorState.GIVING_TASKS:
                 if not mining:
@@ -122,14 +129,15 @@ def enviar_resultados():
     except requests.RequestException as e:
         logger.error(f"Error al enviar resultados al coordinador: {e}")
 
-def iniciar_minero():
-    # obtengo tareas
+def obtener_tareas():
+        # obtengo tareas
     data = None
     try:
         while True:
             try:
                 response = requests.get(config.URI + '/tasks', timeout=5)
                 if response.ok:
+                    data = response.json()
                     break
                 else:
                     logger.info(f"Respuesta inválida del coordinador: {response.status_code}")
@@ -141,8 +149,13 @@ def iniciar_minero():
 
     except Exception as e:
         logger.error(f"Fallo crítico al obtener tareas: {e}")
-    # comienzo la mineria
-    data = response.json()
+
+    return data
+
+def iniciar_minero():
+    
+    data = obtener_tareas()
+
     logger.info(f"Tareas recibidas: {data}")
     state.mined_blocks.blocks.clear()
 
@@ -155,6 +168,25 @@ def iniciar_minero():
 
 def detener_mineria():
     stop_mining_event.set()
+
+def frenar_minado_pool(ch, method, properties, body):
+    threading.Thread(
+        target=handle_frenar_minado
+    ).start()
+    
+def handle_frenar_minado():
+    print("Evento recibido desde pool - interrumpiendo minado")
+    
+    detener_mineria()
+    
+    data = obtener_tareas()
+    logger.info(f"Tareas recibidas: {data}")
+    state.mined_blocks.blocks.clear()
+    stop_mining_event.clear()
+    minar(data, stop_mining_event)
+
+    if len(state.mined_blocks.blocks) > 0:
+        enviar_resultados()
 
 
 iniciar()

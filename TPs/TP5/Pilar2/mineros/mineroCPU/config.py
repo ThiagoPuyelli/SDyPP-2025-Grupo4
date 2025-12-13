@@ -9,3 +9,6 @@ ACCEPTED_ALGORITHM = ""
 URI = os.getenv("HOST_URI", "http://35.244.137.250")
 MINER_ID = os.getenv("MINER_ID", "22")
 PROCESSING_TIER = int(os.getenv("PROCESSING_TIER", 2))
+RABBIT_HOST = os.getenv("RABBIT_HOST", "http://35.185.40.225")
+RABBIT_USER = os.getenv("RABBIT_USER", "blockchain")
+RABBIT_PASS = os.getenv("RABBIT_PASS", "blockchain123")
