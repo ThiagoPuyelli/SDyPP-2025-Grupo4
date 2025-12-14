@@ -4,5 +4,5 @@ metadata:
   name: miner-config
   namespace: blockchain
 data:
-  HOST_URI: "http://34.110.193.180"
+  HOST_URI: "http://34.144.218.58"
   MINER_ID: "gpu"

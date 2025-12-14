@@ -12,8 +12,6 @@ import pika
 stop_mining_event = threading.Event()
 
 def iniciar ():
-    global ws_connected_event
-
     hilo = None
     mining = False
     results_delivered = False
@@ -129,7 +127,7 @@ def enviar_resultados():
         logger.error(f"Error al enviar resultados al coordinador: {e}")
 
 def obtener_tareas():
-        # obtengo tareas
+    # obtengo tareas
     data = None
     try:
         while True:
