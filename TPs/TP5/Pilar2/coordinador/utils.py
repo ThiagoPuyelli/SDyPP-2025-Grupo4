@@ -26,6 +26,9 @@ def is_valid_hash(block, prefix):
 
 def adjust_difficulty():
     ct= state.active_transactions.size()
+    if ct == 0:
+        logger.info("No hay transacciones activas, no se ajusta la dificultad.")
+        return
     no_minadas = (len(state.received_chains.get_all_chains()) - ct) / ct   # [0 ; 1] todas minadas --- ninguna minada
     if no_minadas > 0.8:
         state.next_target_prefix = ajustar_ceros(state.current_target_prefix, 1)
