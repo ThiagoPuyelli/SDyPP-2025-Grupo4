@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: minero
-          image: matiasherrneder/blockchain-minero:efdabe6
+          image: matiasherrneder/blockchain-minero:598329f
           envFrom:
             - configMapRef:
                 name: miner-config
