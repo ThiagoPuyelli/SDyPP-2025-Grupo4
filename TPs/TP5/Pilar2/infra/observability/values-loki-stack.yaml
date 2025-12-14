@@ -1,0 +1,91 @@
+loki:
+  enabled: true
+  isDefault: true
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  singleBinary:
+    replicas: 1
+  storage:
+    type: filesystem
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: standard-rwo
+
+promtail:
+  enabled: true
+  config:
+    snippets:
+      extraScrapeConfigs: |
+        - job_name: kubernetes-pods-blockchain
+          pipeline_stages:
+            - docker: {}
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - action: keep
+              source_labels: [__meta_kubernetes_namespace]
+              regex: blockchain|secret
+            - action: replace
+              source_labels: [__meta_kubernetes_namespace]
+              target_label: namespace
+            - action: replace
+              source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod
+            - action: replace
+              source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container
+
+grafana:
+  enabled: true
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  service:
+    type: LoadBalancer
+    port: 80
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: standard-rwo
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki:3100
+          jsonData:
+            timeout: 60
+          isDefault: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+        - name: custom
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/custom
+  dashboardsConfigMaps:
+    custom: grafana-dashboards-custom
+  dashboards:
+    default:
+      loki-logs:
+        gnetId: 13639
+        revision: 1
+        datasource: Loki

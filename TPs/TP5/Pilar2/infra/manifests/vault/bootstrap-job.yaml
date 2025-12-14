@@ -65,6 +65,8 @@ spec:
               vault kv put secret/blockchain \
                 RABBIT_USER="${RABBIT_USER}" \
                 RABBIT_PASS="${RABBIT_PASS}" \
-                REDIS_DB="${REDIS_DB}"
+                REDIS_DB="${REDIS_DB}" \
+                GRAFANA_USER="${GRAFANA_USER:-admin}" \
+                GRAFANA_PASS="${GRAFANA_PASS:-admin}"
 
               echo "Bootstrap de Vault terminado."
