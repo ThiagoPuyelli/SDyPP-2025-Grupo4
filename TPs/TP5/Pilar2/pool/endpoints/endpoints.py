@@ -55,29 +55,40 @@ async def submit_result(chain: MinedChain):
             detail=f"Block is invalid"
         )
 
-    state.mined_blocks.blocks.append(block)
-    for t in state.tareas_disponibles:
-        if t.transaction == block.transaction:
-            t.mined = True
-            break
-    state.previous_hash = block.hash
-    
-    event = {
-        "type": "NEW_TX"
-    }
-
     if not state.queue_channel:
         raise HTTPException(
             status_code=400,
             detail="Pool not yet initialized"
         )
-
-    publish_seguro(event)
     
-    logger.info("Notificando mineros")
+    for t in state.tareas_disponibles:
+        if t.transaction == block.transaction:
+            
+            if t.mined:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Transaction already mined"
+                )
+            
 
-    logger.info(f"Workload recibida: {block}")
-    return {"status": "received"}
+            t.mined = True
+            state.mined_blocks.blocks.append(block)
+            state.previous_hash = block.hash
+            
+            event = {
+                "type": "NEW_TX"
+            }
+            publish_seguro(event)
+            
+            logger.info("Notificando mineros")
+            logger.info(f"Workload recibida: {block}")
+            return {"status": "received"}
+        
+        
+    raise HTTPException(
+        status_code=400,
+        detail="Transaction not in available tasks"
+    )
 
 ## pasamanos
 @router.get("/state")

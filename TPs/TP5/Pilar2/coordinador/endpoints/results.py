@@ -41,6 +41,21 @@ async def submit_result(chain: MinedChain):
                     status_code=400,
                     detail=f"Invalid chaining at block {i}"
                 )
+            
+        seen_txs = set()
+        for block in blocks:
+            tx = block.transaction
+            if not tx in state.active_transactions.peek_all():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Transaction not currently active"
+                )
+            if tx in seen_txs:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Duplicated transaction in mined chain"
+                )
+            seen_txs.add(tx)
 
         received_chains.add_chain(MinedChain(blocks=blocks))
         logger.info(f"Workload recibida: {blocks}")
