@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException, Query
 import state
 from models import MinedChain
-from utils import is_valid_hash
+from utils import is_valid_hash, publish_seguro
 import requests
 import config
 import time
-import json
 from log_config import logger
 
 router = APIRouter()
