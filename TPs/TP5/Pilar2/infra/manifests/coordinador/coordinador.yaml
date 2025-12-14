@@ -16,7 +16,7 @@ spec:
       serviceAccountName: coordinador-sa
       initContainers:
         - name: vault-agent-init
-          image: hashicorp/vault:1.15.4
+          image: matiasherrneder/blockchain-coordinador:96b2c5a
           env:
             - name: VAULT_ADDR
               value: http://vault.secret.svc:8200
@@ -67,7 +67,7 @@ spec:
               vault agent -config=/vault/config/agent.hcl -log-level=info
       containers:
         - name: coordinador
-          image: matiasherrneder/blockchain-coordinador:08a039c
+          image: matiasherrneder/blockchain-coordinador:96b2c5a
           ports:
             - containerPort: 8000
           envFrom:
