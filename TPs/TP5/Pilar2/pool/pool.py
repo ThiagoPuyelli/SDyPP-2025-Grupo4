@@ -1,4 +1,4 @@
-from utils import get_current_phase, sync_con_coordinador, get_tareas
+from utils import get_current_phase, sync_con_coordinador, get_tareas, publish_seguro
 from state import CoordinatorState
 import state
 from log_config import logger
@@ -6,7 +6,30 @@ import time
 import requests
 import config
 import pika
-import json
+import pika.exceptions
+
+
+def conectar_rabbit():
+    while True:
+        try:
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=config.RABBIT_HOST,
+                    credentials=pika.PlainCredentials(
+                        config.RABBIT_USER,
+                        config.RABBIT_PASS
+                    ),
+                    heartbeat=30,
+                    blocked_connection_timeout=30
+                )
+            )
+            channel = connection.channel()
+            logger.info("Conectado a RabbitMQ")
+            return connection, channel
+        except pika.exceptions.AMQPConnectionError as e:
+            logger.warning(f"No se pudo conectar a RabbitMQ: {e}, reintentando...")
+            time.sleep(5)
+
 
 
 def iniciar ():
@@ -35,17 +58,7 @@ def iniciar ():
     sync_con_coordinador()
 
     # creo canal para el exchange
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=config.RABBIT_HOST,
-            credentials=pika.PlainCredentials(
-                username=config.RABBIT_USER,
-                password=config.RABBIT_PASS
-            )
-        )
-    )
-
-    state.queue_channel = connection.channel()
+    state.rabbit_connection, state.queue_channel = conectar_rabbit()
 
     # ciclo principal
     while True:
@@ -56,11 +69,7 @@ def iniciar ():
                 event = {
                     "type": "NEW_TX"
                 }
-                state.queue_channel.basic_publish(
-                    exchange="blockchain.exchange",
-                    routing_key="",
-                    body=json.dumps(event)
-                    )
+                publish_seguro(event)
                 logger.info("Notificando mineros")
 
                 get_tareas()

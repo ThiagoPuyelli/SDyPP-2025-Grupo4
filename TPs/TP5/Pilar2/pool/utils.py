@@ -5,9 +5,35 @@ from monotonic import MonotonicTime
 from log_config import setup_logger_con_monotonic, logger
 import state
 from state import CoordinatorState
+import state
 import config
 from models import ActiveTransaction
 import requests
+import pika.exceptions
+import json
+
+def publish_seguro(event):
+    try:
+        state.queue_channel.basic_publish(
+            exchange="blockchain.exchange",
+            routing_key="",
+            body=json.dumps(event)
+        )
+    except pika.exceptions.AMQPError as e:
+        logger.error(f"Error publicando en RabbitMQ: {e}, reconectando...")
+        try:
+            state.rabbit_connection.close()
+        except Exception:
+            pass
+
+        state.rabbit_connection, state.queue_channel = conectar_rabbit()
+
+        # reintento
+        state.queue_channel.basic_publish(
+            exchange="blockchain.exchange",
+            routing_key="",
+            body=json.dumps(event)
+        )
 
 def get_current_phase(now) -> CoordinatorState:
     if now == None:

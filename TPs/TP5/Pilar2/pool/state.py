@@ -20,6 +20,7 @@ mineros_activos = LocalSubscribers()
 conexiones_ws: Dict[str, WebSocket] = {}
 
 queue_channel = None
+rabbit_connection = None
 
 # guardan la consulta de las tareas disponibles
 tareas_disponibles = []

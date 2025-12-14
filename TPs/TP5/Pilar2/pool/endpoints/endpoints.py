@@ -85,11 +85,7 @@ async def submit_result(chain: MinedChain, miner_id: str = Query(..., descriptio
             detail="Pool not yet initialized"
         )
 
-    state.queue_channel.basic_publish(
-        exchange="blockchain.exchange",
-        routing_key="",
-        body=json.dumps(event)
-        )
+    publish_seguro(event)
     
     logger.info("Notificando mineros")
 
