@@ -31,10 +31,10 @@ def adjust_difficulty():
         return
     no_minadas = (len(state.received_chains.get_all_chains()) - ct) / ct   # [0 ; 1] todas minadas --- ninguna minada
     if no_minadas > 0.8:
-        state.next_target_prefix = ajustar_ceros(state.current_target_prefix, 1)
+        state.next_target_prefix = ajustar_ceros(state.current_target_prefix, -1)
         logger.info(f"Ajustando dificultad: {state.current_target_prefix} -> {state.next_target_prefix}")
     elif no_minadas < 0.2 and len(state.current_target_prefix) > 1:
-        state.next_target_prefix = ajustar_ceros(state.current_target_prefix, -1)
+        state.next_target_prefix = ajustar_ceros(state.current_target_prefix, 1)
         logger.info(f"Ajustando dificultad: {state.current_target_prefix} -> {state.next_target_prefix}")
     else:
         logger.info(f"Dificultad se mantiene: {state.current_target_prefix}")

@@ -139,39 +139,40 @@ def enviar_resultados():
             if res.status_code == 200:
                 data = res.json()
                 if data.get("status") == "received":
-                    logger.info("Resultados recibidos por el coordinador")
+                    logger.info("Resultados recibidos por el host")
                     break
+            elif res.status_code == 400:
+                logger.info("Resultados rechazados por el host")
+                break
             time.sleep(3)
     except requests.RequestException as e:
-        logger.error(f"Error al enviar resultados al coordinador: {e}")
+        logger.error(f"Error al enviar resultados al host: {e}")
 
 def obtener_tareas():
     # obtengo tareas
-    data = None
     try:
         while True:
             try:
                 response = requests.get(config.URI + '/tasks', timeout=5)
                 if response.status_code == 204: # no hay contenido disponible
                     logger.info("No hay tareas disponibles (204 No Content).")
-                    break
+                    return None
                 
                 elif response.status_code == 200: # 200 OK
-                    data = response.json()
-                    break
+                    return response.json()
 
                 else:
-                    logger.info(f"Respuesta inválida del coordinador: {response.status_code}")
+                    logger.info(f"Respuesta inválida del host: {response.status_code}")
             except requests.RequestException as e:
-                logger.warning(f"Error al conectar con el coordinador: {e}")
+                logger.warning(f"Error al conectar con el host: {e}")
             
-            logger.info("Reintento de conexión con el coordinador en 3 segundos...")
+            logger.info("Reintento de conexión con el host en 3 segundos...")
             time.sleep(3)
 
     except Exception as e:
         logger.error(f"Fallo crítico al obtener tareas: {e}")
 
-    return data
+    return None
 
 def iniciar_minero():
     
@@ -213,7 +214,7 @@ def handle_frenar_minado():
         if data is None:
             return
 
-        logger.info(f"Tareas recibidas: {data}")
+        logger.info(f"Nuevas tareas recibidas: {data}")
 
         state.mined_blocks.blocks.clear()
         stop_mining_event.clear()
