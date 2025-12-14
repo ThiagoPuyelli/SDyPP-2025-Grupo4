@@ -16,7 +16,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: minero-gpu
-          image: matiasherrneder/blockchain-minero-gpu:5dfe952
+          image: matiasherrneder/blockchain-minero-gpu:b31deab
           resources:
             limits:
               nvidia.com/gpu: 1
