@@ -35,10 +35,6 @@ def sync_con_coordinador():
         try:
             response = requests.get(
                 config.URI + '/state',
-                params={
-                    "miner_id": config.MINER_ID,
-                    "parametro_procesamiento": config.PROCESSING_TIER
-                },
                 timeout=5
             )
             if response.ok:

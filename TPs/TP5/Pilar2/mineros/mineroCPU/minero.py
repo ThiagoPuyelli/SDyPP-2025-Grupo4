@@ -134,7 +134,6 @@ def enviar_resultados():
             res = requests.post(
                 config.URI + "/results", 
                 json=state.mined_blocks.model_dump(), 
-                params={"miner_id": config.MINER_ID},
                 timeout=5
             )
             if res.status_code == 200:
