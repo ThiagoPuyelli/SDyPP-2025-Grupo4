@@ -38,7 +38,7 @@ def iniciar ():
     while True:
         nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
         if nuevo_estado == CoordinatorState.GIVING_TASKS:
-            if not mining:
+            if not mining and not results_delivered:
 
                 get_tareas()
 
@@ -48,7 +48,6 @@ def iniciar ():
                 publish_seguro(event)
                 logger.info("Notificando mineros")
 
-                results_delivered = False
                 mining = True
                 state.nonce_start = 0
                 sync_con_coordinador()
@@ -60,13 +59,12 @@ def iniciar ():
                 state.cant_transacciones_a_minar = 0
         else:
             ## si hay que entregar resultados hacerlo
-            if not results_delivered:
-                mining = False
-                if not results_delivered:
-                    if len(state.mined_blocks.blocks) > 0:
-                        enviar_resultados()
-                    results_delivered = True
-                    state.cant_transacciones_a_minar = 0
+            mining = False
+            results_delivered = False
+            if state.cant_transacciones_a_minar > 0:
+                if len(state.mined_blocks.blocks) > 0:
+                    enviar_resultados()
+                state.cant_transacciones_a_minar = 0
 
         time.sleep(1)
 
@@ -80,6 +78,9 @@ def enviar_resultados():
                 if data.get("status") == "received":
                     logger.info("Resultados recibidos por el coordinador")
                     break
+            elif res.status_code == 400:
+                logger.info("Resultados rechazados por el coordinador")
+                break
             time.sleep(3)
     except requests.RequestException as e:
         logger.error(f"Error al enviar resultados al coordinador: {e}")
