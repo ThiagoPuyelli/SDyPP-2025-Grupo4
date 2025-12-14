@@ -181,3 +181,12 @@ async def notify_miners_new_block():
     # remover desconectados
     for miner_id in to_remove:
         state.conexiones_ws.pop(miner_id, None)
+
+def tx_signature(tx):
+    return (
+        tx.source,
+        tx.target,
+        tx.amount,
+        tx.timestamp,
+        tx.sign,
+    )

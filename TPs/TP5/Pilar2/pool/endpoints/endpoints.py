@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 import state
 from models import MinedChain
-from utils import is_valid_hash, publish_seguro
+from utils import is_valid_hash, publish_seguro, tx_signature
 import requests
 import config
 import time
@@ -60,9 +60,11 @@ async def submit_result(chain: MinedChain):
             status_code=400,
             detail="Pool not yet initialized"
         )
-    
+
+    sig = tx_signature(block.transaction)
+
     for t in state.tareas_disponibles:
-        if t.transaction == block.transaction:
+        if tx_signature(t.transaction) == sig:
             
             if t.mined:
                 raise HTTPException(
