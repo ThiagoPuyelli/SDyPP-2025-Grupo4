@@ -1,4 +1,5 @@
 import time
+from models import ActiveTransaction, Transaction
 from config import MAX_MINING_ATTEMPTS
 from state import CoordinatorState
 from utils import adjust_difficulty, create_genesis_block, get_starting_phase
@@ -59,7 +60,19 @@ def handle_selecting_winner():
     if best_chain:
         state.blockchain.extend(best_chain)
         logger.info("✔️ Cadena aceptada")
-
+        
+        # premio al ganador
+        active_tx = ActiveTransaction(
+            transaction=Transaction(
+                source="0", #generado por el coordinador
+                target=best_chain[0].miner_id,
+                amount=10, #premio fijo
+                timestamp=mono_time.get_hora_actual(),
+                sign="0" #no se firma si es del coordinador
+            )
+        )
+        state.pending_transactions.put(active_tx)
+        
         mined_signatures = {block.transaction.sign for block in best_chain.blocks}
     
     else:
@@ -73,7 +86,7 @@ def handle_selecting_winner():
         tx = active_tx.transaction
         if tx.sign not in mined_signatures:
             active_tx.ttl += 1
-            if active_tx.ttl <= MAX_MINING_ATTEMPTS:
+            if active_tx.ttl <= MAX_MINING_ATTEMPTS or tx.source == "0": # si es generada por la blockchain no deberia expirar
                 state.pending_transactions.put(active_tx) # mover a pendiente nuevamente
                 logger.info(f"🔁 Reencolando {tx.sign} (TTL {active_tx.ttl})")
             else:

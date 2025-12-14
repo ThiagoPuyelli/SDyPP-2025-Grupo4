@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 import state
 from models import MinedChain
-from utils import is_valid_hash, publish_seguro, tx_signature
+from utils import is_valid_hash, publish_seguro, tx_signature, verify_tx_signature
 import requests
 import config
 import time
@@ -61,6 +61,12 @@ async def submit_result(chain: MinedChain):
             detail="Pool not yet initialized"
         )
 
+    if not verify_tx_signature(block.transaction):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid transaction signature"
+        )
+
     sig = tx_signature(block.transaction)
 
     for t in state.tareas_disponibles:
@@ -71,7 +77,6 @@ async def submit_result(chain: MinedChain):
                     status_code=400,
                     detail="Transaction already mined"
                 )
-            
 
             t.mined = True
             state.mined_blocks.blocks.append(block)
@@ -85,7 +90,6 @@ async def submit_result(chain: MinedChain):
             logger.info("Notificando mineros")
             logger.info(f"Workload recibida: {block}")
             return {"status": "received"}
-        
         
     raise HTTPException(
         status_code=400,

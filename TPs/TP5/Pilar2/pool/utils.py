@@ -11,6 +11,10 @@ from models import ActiveTransaction
 import requests
 import pika.exceptions
 import json
+import base64
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.exceptions import InvalidSignature
 
 
 def conectar_rabbit():
@@ -190,3 +194,31 @@ def tx_signature(tx):
         tx.timestamp,
         tx.sign,
     )
+
+def verify_tx_signature(tx) -> bool:
+    if tx.source == "0":
+        # transacción del sistema / coordinador
+        return True
+
+    try:
+        public_key = serialization.load_pem_public_key(
+            tx.source.encode()
+        )
+
+        message = f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}".encode()
+
+        signature = base64.b64decode(tx.signature)
+
+        public_key.verify(
+            signature,
+            message,
+            padding.PKCS1v15(),
+            hashes.SHA256()
+        )
+
+        return True
+
+    except InvalidSignature:
+        return False
+    except Exception:
+        return False

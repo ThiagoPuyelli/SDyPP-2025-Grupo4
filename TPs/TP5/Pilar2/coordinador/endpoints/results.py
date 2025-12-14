@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from models import MinedChain
-from utils import is_valid_hash, tx_signature
+from utils import is_valid_hash, tx_signature, verify_tx_signature
 from state import blockchain, received_chains, CoordinatorState
 import state
 from log_config import logger
@@ -48,6 +48,12 @@ async def submit_result(chain: MinedChain):
             }
 
         for block in blocks:
+            if not verify_tx_signature(block.transaction):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid transaction signature"
+                )
+            
             sig = tx_signature(block.transaction)
 
             if not sig in active_sigs:

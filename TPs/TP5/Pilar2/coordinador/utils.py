@@ -1,11 +1,16 @@
 import hashlib
 from datetime import datetime, timezone
+from TPs.TP5.Pilar2.coordinador.services.database_service import RedisBlockchainDatabase
 import config
 from state import CoordinatorState, blockchain
 from typing import Optional
 from models import MinedBlock, Transaction
 import state
 from log_config import logger
+import base64
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.exceptions import InvalidSignature
 
 def calcular_md5(texto):
     hash_md5 = hashlib.md5()
@@ -113,3 +118,51 @@ def tx_signature(tx):
         tx.timestamp,
         tx.sign,
     )
+
+def verify_tx_signature(tx) -> bool:
+    if tx.source == "0":
+        # transacción del sistema / coordinador
+        return True
+
+    try:
+        public_key = serialization.load_pem_public_key(
+            tx.source.encode()
+        )
+
+        message = f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}".encode()
+
+        signature = base64.b64decode(tx.signature)
+
+        public_key.verify(
+            signature,
+            message,
+            padding.PKCS1v15(),
+            hashes.SHA256()
+        )
+
+        return True
+
+    except InvalidSignature:
+        return False
+    except Exception:
+        return False
+    
+
+def has_sufficient_funds(tx: Transaction) -> bool:
+    if tx.source == "0":
+        return True
+
+    balance = 0.0
+
+    chain = state.blockchain.get_chain().blocks
+
+    for block in reversed(chain):
+        btx = block.transaction
+
+        if btx.target == tx.source:
+            balance += btx.amount
+
+        if btx.source == tx.source:
+            balance -= btx.amount
+
+    return False
