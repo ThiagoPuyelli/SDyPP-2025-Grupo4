@@ -105,3 +105,11 @@ def create_genesis_block() -> Optional[MinedBlock]:
         return genesis_block
     return None
     
+def tx_signature(tx):
+    return (
+        tx.source,
+        tx.target,
+        tx.amount,
+        tx.timestamp,
+        tx.sign,
+    )

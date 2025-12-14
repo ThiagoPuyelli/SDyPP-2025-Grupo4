@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from models import MinedChain
-from utils import is_valid_hash
+from utils import is_valid_hash, tx_signature
 from state import blockchain, received_chains, CoordinatorState
 import state
 from log_config import logger
@@ -43,19 +43,24 @@ async def submit_result(chain: MinedChain):
                 )
             
         seen_txs = set()
+        active_sigs = {
+            tx_signature(t) for t in state.active_transactions.peek_all()
+            }
+
         for block in blocks:
-            tx = block.transaction
-            if not tx in state.active_transactions.peek_all():
+            sig = tx_signature(block.transaction)
+
+            if not sig in active_sigs:
                 raise HTTPException(
                     status_code=400,
                     detail="Transaction not currently active"
                 )
-            if tx in seen_txs:
+            if sig in seen_txs:
                 raise HTTPException(
                     status_code=400,
                     detail="Duplicated transaction in mined chain"
                 )
-            seen_txs.add(tx)
+            seen_txs.add(sig)
 
         received_chains.add_chain(MinedChain(blocks=blocks))
         logger.info(f"Workload recibida: {blocks}")
