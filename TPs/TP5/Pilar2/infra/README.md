@@ -66,6 +66,20 @@ kubectl get nodes
    ```
    Debe aparecer `vault-bootstrap` en estado `Complete`.
 
+### Observabilidad (Loki + Promtail + Grafana)
+1. Ir a `observability` y ejecutar:
+   ```
+   ./observability/install.sh
+   ```
+   Instala el chart `loki-stack` en el namespace `observability` con Loki+Promtail+Grafana, PVCs y dashboard de logs.
+2. Acceso a Grafana:
+   ```
+   kubectl -n observability get svc loki-stack-grafana
+   ```
+   - Si es LoadBalancer, usar la IP externa.
+   - O `kubectl -n observability port-forward svc/loki-stack-grafana 3000:80`.
+   Usuario/clave por defecto: `admin` / `admin`.
+
 ### Despliegue de los manifiestos
 En el directorio /manifests
 
