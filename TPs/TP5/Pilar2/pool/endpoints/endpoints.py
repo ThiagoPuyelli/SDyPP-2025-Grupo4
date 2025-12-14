@@ -90,6 +90,8 @@ async def submit_result(chain: MinedChain, miner_id: str = Query(..., descriptio
         routing_key="",
         body=json.dumps(event)
         )
+    
+    logger.info("Notificando mineros")
 
     logger.info(f"Workload recibida: {block}")
     return {"status": "received"}

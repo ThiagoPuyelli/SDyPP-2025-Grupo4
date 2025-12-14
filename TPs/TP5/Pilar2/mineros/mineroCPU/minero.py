@@ -11,6 +11,41 @@ import pika
 
 stop_mining_event = threading.Event()
 
+
+def start_rabbitmq_consumer():
+    if state.pool_id:
+        credentials = pika.PlainCredentials(
+            username=config.RABBIT_USER,
+            password=config.RABBIT_PASS
+        )
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host=config.RABBIT_HOST, 
+            credentials=credentials)
+        )
+        channel = connection.channel()
+        
+        result = channel.queue_declare(
+            queue="",
+            exclusive=True,
+            auto_delete=True
+        )
+        queue_name = result.method.queue
+
+        channel.queue_bind(
+            exchange="blockchain.exchange",
+            queue=queue_name
+        )
+
+        channel.basic_consume(
+            queue=queue_name,
+            on_message_callback=frenar_minado_pool,
+            auto_ack=True
+        )
+
+        print("Iniciando consumidor de RabbitMQ en hilo secundario...")
+        channel.start_consuming()
+
+
 def iniciar ():
     hilo = None
     mining = False
@@ -38,38 +73,9 @@ def iniciar ():
 
     # crear cola efimera solo si es con pool
     if state.pool_id:
+        consumer_thread = threading.Thread(target=start_rabbitmq_consumer, daemon=True)
+        consumer_thread.start()
 
-        credentials = pika.PlainCredentials(
-            username=config.RABBIT_USER,
-            password=config.RABBIT_PASS
-        )
-
-        connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=config.RABBIT_HOST, 
-            credentials=credentials)
-            )
-        channel = connection.channel()
-        
-        result = channel.queue_declare(
-            queue="",
-            exclusive=True,
-            auto_delete=True
-        )
-
-        queue_name = result.method.queue
-
-        channel.queue_bind(
-            exchange="blockchain.exchange",
-            queue=queue_name
-        )
-
-        channel.basic_consume(
-            queue=queue_name,
-            on_message_callback=frenar_minado_pool,
-            auto_ack=True
-        )
-
-        channel.start_consuming()
 
     # sincronizo el reloj con el coordinador
     sync_con_coordinador()

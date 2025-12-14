@@ -52,7 +52,7 @@ def iniciar ():
         nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
         if nuevo_estado == CoordinatorState.GIVING_TASKS:
             if not mining:
-                
+
                 event = {
                     "type": "NEW_TX"
                 }
@@ -61,6 +61,7 @@ def iniciar ():
                     routing_key="",
                     body=json.dumps(event)
                     )
+                logger.info("Notificando mineros")
 
                 get_tareas()
                 results_delivered = False
