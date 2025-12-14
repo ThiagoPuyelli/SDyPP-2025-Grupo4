@@ -40,13 +40,14 @@ def iniciar ():
         if nuevo_estado == CoordinatorState.GIVING_TASKS:
             if not mining:
 
+                get_tareas()
+
                 event = {
                     "type": "NEW_TX"
                 }
                 publish_seguro(event)
                 logger.info("Notificando mineros")
 
-                get_tareas()
                 results_delivered = False
                 mining = True
                 state.nonce_start = 0
