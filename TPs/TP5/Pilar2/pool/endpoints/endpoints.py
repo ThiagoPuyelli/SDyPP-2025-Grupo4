@@ -18,7 +18,7 @@ async def get_transaction():
     )
     if tarea is None:
         raise HTTPException(
-            status_code=404,
+            status_code=204,
             detail="No hay tareas disponibles para minar"
         )
     
