@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 from services.secret_service import get_secret
-from services.database_service import LocalBlockchainDatabase, LocalReceivedChainsDatabase, RedisBlockchainDatabase, RedisReceivedChainsDatabase, RedisActiveTransactions
-from services.queue_service import LocalTransactionQueue, RabbitTransactionQueue
+from services.database_service import RedisBlockchainDatabase, RedisReceivedChainsDatabase, RedisActiveTransactions
+from services.queue_service import RabbitTransactionQueue
 import os
 import redis
 

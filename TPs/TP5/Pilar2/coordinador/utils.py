@@ -1,14 +1,11 @@
-import json
 import hashlib
 from datetime import datetime, timezone
-from pathlib import Path
 import config
 from state import CoordinatorState, blockchain
 from typing import Optional
 from models import MinedBlock, Transaction
 import state
 from log_config import logger
-import os
 
 def calcular_md5(texto):
     hash_md5 = hashlib.md5()
@@ -28,7 +25,16 @@ def is_valid_hash(block, prefix):
     return True
 
 def adjust_difficulty():
-    logger.info(f"Ajustando dificultad: {state.current_target_prefix} -> {state.next_target_prefix}")
+    ct= state.active_transactions.size()
+    no_minadas = (len(state.received_chains.get_all_chains()) - ct) / ct   # [0 ; 1] todas minadas --- ninguna minada
+    if no_minadas > 0.8:
+        state.next_target_prefix = ajustar_ceros(state.current_target_prefix, 1)
+        logger.info(f"Ajustando dificultad: {state.current_target_prefix} -> {state.next_target_prefix}")
+    elif no_minadas < 0.2 and len(state.current_target_prefix) > 1:
+        state.next_target_prefix = ajustar_ceros(state.current_target_prefix, -1)
+        logger.info(f"Ajustando dificultad: {state.current_target_prefix} -> {state.next_target_prefix}")
+    else:
+        logger.info(f"Dificultad se mantiene: {state.current_target_prefix}")
     state.current_target_prefix = state.next_target_prefix
 
 def ajustar_ceros(cadena, cantidad):
