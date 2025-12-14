@@ -1,7 +1,14 @@
 loki:
   enabled: true
+  fullnameOverride: loki
+  serviceName: loki
   isDefault: true
   auth_enabled: false
+  server:
+    http_listen_address: 0.0.0.0
+    http_listen_port: 3100
+    grpc_listen_address: 0.0.0.0
+    grpc_listen_port: 9095
   commonConfig:
     replication_factor: 1
   singleBinary:
@@ -14,7 +21,7 @@ loki:
     storageClassName: standard-rwo
 
 promtail:
-  enabled: true
+  enabled: false
   config:
     snippets:
       extraScrapeConfigs: |

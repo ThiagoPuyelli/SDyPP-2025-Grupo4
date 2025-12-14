@@ -3,8 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VALUES_FILE="${SCRIPT_DIR}/values-loki-stack.yaml"
+PROMTAIL_VALUES_FILE="${SCRIPT_DIR}/values-promtail.yaml"
 NAMESPACE="observability"
 RELEASE="loki-stack"
+PROMTAIL_RELEASE="promtail"
 ENV_FILE="${SCRIPT_DIR}/../vault/.env"
 DASHBOARDS_DIR="${SCRIPT_DIR}/dashboards"
 
@@ -52,8 +54,28 @@ helm upgrade --install "${RELEASE}" grafana/loki-stack \
 
 echo "Esperando a que Grafana y Loki estén listos..."
 kubectl -n "${NAMESPACE}" rollout status deploy/"${RELEASE}"-grafana --timeout=300s
-# El chart crea el StatefulSet con el nombre del release (sin sufijo -loki).
-kubectl -n "${NAMESPACE}" rollout status statefulset/"${RELEASE}" --timeout=300s || true
+LOKI_STS="$(kubectl -n "${NAMESPACE}" get sts -l app=loki,release="${RELEASE}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+if [[ -n "${LOKI_STS}" ]]; then
+  kubectl -n "${NAMESPACE}" rollout status statefulset/"${LOKI_STS}" --timeout=300s || true
+else
+  echo "No se encontró StatefulSet de Loki (label app=loki,release=${RELEASE})."
+fi
+
+echo "Instalando/actualizando Promtail como release separado (${PROMTAIL_RELEASE})..."
+helm upgrade --install "${PROMTAIL_RELEASE}" grafana/promtail \
+  --namespace "${NAMESPACE}" \
+  --create-namespace \
+  -f "${PROMTAIL_VALUES_FILE}"
+
+PROMTAIL_DS="$(kubectl -n "${NAMESPACE}" get ds -l app.kubernetes.io/name=promtail,release="${PROMTAIL_RELEASE}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+PROMTAIL_DEP="$(kubectl -n "${NAMESPACE}" get deploy -l app.kubernetes.io/name=promtail,release="${PROMTAIL_RELEASE}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+if [[ -n "${PROMTAIL_DS}" ]]; then
+  kubectl -n "${NAMESPACE}" rollout status ds/"${PROMTAIL_DS}" --timeout=300s || true
+elif [[ -n "${PROMTAIL_DEP}" ]]; then
+  kubectl -n "${NAMESPACE}" rollout status deploy/"${PROMTAIL_DEP}" --timeout=300s || true
+else
+  echo "No se encontró Promtail (DaemonSet o Deployment con labels app=promtail,release=${PROMTAIL_RELEASE})."
+fi
 
 echo "Listo. Accedé a Grafana (usuario/pass tomados de ${ENV_FILE}) vía:"
 echo "  kubectl -n ${NAMESPACE} get svc ${RELEASE}-grafana"
