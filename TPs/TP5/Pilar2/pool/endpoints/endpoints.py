@@ -34,19 +34,7 @@ async def get_transaction():
 
 ## recibir cadenas minadas, evaluarlas, si esta bien cortar el minado de los demas
 @router.post("/results")
-async def submit_result(chain: MinedChain, miner_id: str = Query(..., description="Miner PK")):
-    # if not state.mineros_activos.validar_minero(miner_id):
-    #     raise HTTPException(
-    #         status_code=403,
-    #         detail="Miner not registered, login with /login first"
-    #     )
-    
-    # if miner_id not in state.conexiones_ws:
-    #     raise HTTPException(
-    #         status_code=403,
-    #         detail="Miner not connected via WebSocket"
-    #     )
-
+async def submit_result(chain: MinedChain):
     if not chain.blocks:
         raise HTTPException(
             status_code=400,
@@ -90,31 +78,6 @@ async def submit_result(chain: MinedChain, miner_id: str = Query(..., descriptio
 
     logger.info(f"Workload recibida: {block}")
     return {"status": "received"}
-
-# ## login de minero via websocket
-# @router.websocket("/login")
-# async def miner_ws(ws: WebSocket):
-#     await ws.accept()
-
-#     # Primer mensaje contiene ID + tier
-#     init_msg = await ws.receive_json()
-#     miner_id = init_msg["id"]
-#     processing_tier = init_msg["processing_tier"]
-
-#     # Registrar minero
-#     miner = Miner(id=miner_id, processing_tier=processing_tier)
-#     state.mineros_activos.agregar_minero(miner)
-#     state.conexiones_ws[miner_id] = ws
-
-#     logger.info(f"Miner WS connected: {miner_id}")
-
-#     try:
-#         while True:
-#             await ws.receive_text()
-#     except WebSocketDisconnect:
-#         logger.info(f"Miner disconnected: {miner_id}")
-#         state.conexiones_ws.pop(miner_id, None)
-#         state.mineros_activos.eliminar_minero(miner_id)
 
 ## pasamanos
 @router.get("/state")

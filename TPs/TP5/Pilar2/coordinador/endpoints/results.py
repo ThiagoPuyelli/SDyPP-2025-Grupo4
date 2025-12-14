@@ -8,7 +8,7 @@ from log_config import logger
 router = APIRouter()
 
 @router.post("/results")
-async def submit_result(chain: MinedChain, miner_id: str = Query(..., description="Miner PK")):
+async def submit_result(chain: MinedChain):
     try:
         if state.cicle_state != CoordinatorState.OPEN_TO_RESULTS and state.cicle_state != CoordinatorState.GIVING_TASKS:
             raise HTTPException(
