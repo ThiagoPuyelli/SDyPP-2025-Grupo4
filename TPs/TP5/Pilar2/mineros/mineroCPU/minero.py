@@ -8,42 +8,56 @@ import requests
 import threading
 import config
 import pika
+import pika.exceptions
 
 stop_mining_event = threading.Event()
-
+mining_thread = None
+mining_lock = threading.Lock()
 
 def start_rabbitmq_consumer():
-    if state.pool_id:
-        credentials = pika.PlainCredentials(
-            username=config.RABBIT_USER,
-            password=config.RABBIT_PASS
-        )
-        connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=config.RABBIT_HOST, 
-            credentials=credentials)
-        )
-        channel = connection.channel()
-        
-        result = channel.queue_declare(
-            queue="",
-            exclusive=True,
-            auto_delete=True
-        )
-        queue_name = result.method.queue
+    if not state.pool_id:
+        return
 
-        channel.queue_bind(
-            exchange="blockchain.exchange",
-            queue=queue_name
-        )
+    while True:
+        try:
+            credentials = pika.PlainCredentials(
+                username=config.RABBIT_USER,
+                password=config.RABBIT_PASS
+            )
 
-        channel.basic_consume(
-            queue=queue_name,
-            on_message_callback=frenar_minado_pool,
-            auto_ack=True
-        )
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=config.RABBIT_HOST,
+                    credentials=credentials,
+                    heartbeat=30,
+                    blocked_connection_timeout=30
+                )
+            )
+            channel = connection.channel()
 
-        print("Iniciando consumidor de RabbitMQ en hilo secundario...")
-        channel.start_consuming()
+            result = channel.queue_declare(
+                queue="",
+                exclusive=True,
+                auto_delete=True
+            )
+            queue_name = result.method.queue
+            channel.queue_bind(exchange="blockchain.exchange", queue=queue_name)
+
+            channel.basic_consume(
+                queue=queue_name,
+                on_message_callback=frenar_minado_pool,
+                auto_ack=True
+            )
+
+            logger.info("Consumidor RabbitMQ iniciado")
+            channel.start_consuming()
+
+        except pika.exceptions.AMQPError as e:
+            logger.warning(f"Conexión RabbitMQ caída: {e}. Reintentando en 5s...")
+            time.sleep(5)
+        except Exception as e:
+            logger.error(f"Error crítico en consumidor RabbitMQ: {e}")
+            time.sleep(5)
 
 
 def iniciar ():
@@ -73,7 +87,7 @@ def iniciar ():
 
     # crear cola efimera solo si es con pool
     if state.pool_id:
-        consumer_thread = threading.Thread(target=start_rabbitmq_consumer, daemon=True)
+        consumer_thread = threading.Thread(target=start_rabbitmq_consumer)
         consumer_thread.start()
 
 
@@ -139,9 +153,14 @@ def obtener_tareas():
         while True:
             try:
                 response = requests.get(config.URI + '/tasks', timeout=5)
-                if response.ok:
+                if response.status_code == 204: # no hay contenido disponible
+                    logger.info("No hay tareas disponibles (204 No Content).")
+                    break
+                
+                elif response.status_code == 200: # 200 OK
                     data = response.json()
                     break
+
                 else:
                     logger.info(f"Respuesta inválida del coordinador: {response.status_code}")
             except requests.RequestException as e:
@@ -158,6 +177,9 @@ def obtener_tareas():
 def iniciar_minero():
     
     data = obtener_tareas()
+
+    # if data is None:
+    #     return None
 
     logger.info(f"Tareas recibidas: {data}")
     state.mined_blocks.blocks.clear()
@@ -178,14 +200,32 @@ def frenar_minado_pool(ch, method, properties, body):
     ).start()
     
 def handle_frenar_minado():
-    print("Evento recibido desde pool - interrumpiendo minado")
-    
-    detener_mineria()
-    
-    data = obtener_tareas()
-    logger.info(f"Tareas recibidas: {data}")
-    state.mined_blocks.blocks.clear()
-    stop_mining_event.clear()
+    global mining_thread
+
+    logger.info("Evento recibido desde pool - interrumpiendo minado")
+
+    with mining_lock:
+        if mining_thread and mining_thread.is_alive():
+            detener_mineria()
+            mining_thread.join()
+
+        data = obtener_tareas()
+
+        if data is None:
+            return
+
+        logger.info(f"Tareas recibidas: {data}")
+
+        state.mined_blocks.blocks.clear()
+        stop_mining_event.clear()
+
+        mining_thread = threading.Thread(
+            target=minar_y_enviar,
+            args=(data,)
+        )
+        mining_thread.start()
+
+def minar_y_enviar(data):
     minar(data, stop_mining_event)
 
     if len(state.mined_blocks.blocks) > 0:
