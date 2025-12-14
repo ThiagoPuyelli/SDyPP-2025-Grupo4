@@ -16,7 +16,7 @@ spec:
       serviceAccountName: coordinador-sa
       initContainers:
         - name: vault-agent-init
-          image: matiasherrneder/blockchain-coordinador:96b2c5a
+          image: hashicorp/vault:1.15.4
           env:
             - name: VAULT_ADDR
               value: http://vault.secret.svc:8200
