@@ -104,6 +104,3 @@ spec:
     - port: 8000
       targetPort: 8000
   type: ClusterIP
-  template:
-    spec:
-      containers: []

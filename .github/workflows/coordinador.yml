@@ -43,8 +43,10 @@ jobs:
       - name: Update Kubernetes Manifests
         run: |
           yq -i '
-            (.spec.template.spec.containers[] | select(.name == "coordinador") | .image)
-            = "'$IMAGE_NAME:${{ steps.vars.outputs.TAG }}'"
+            select(.kind == "Deployment" and .metadata.name == "coordinador")
+            .spec.template.spec.containers[]
+            |= select(.name == "coordinador")
+            .image = "'$IMAGE_NAME:${{ steps.vars.outputs.TAG }}'"
           ' TPs/TP5/Pilar2/infra/manifests/coordinador/coordinador.yaml
 
           git config --global user.name "GitHub Actions"
