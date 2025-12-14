@@ -12,6 +12,28 @@ import requests
 import pika.exceptions
 import json
 
+
+def conectar_rabbit():
+    while True:
+        try:
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=config.RABBIT_HOST,
+                    credentials=pika.PlainCredentials(
+                        config.RABBIT_USER,
+                        config.RABBIT_PASS
+                    ),
+                    heartbeat=30,
+                    blocked_connection_timeout=30
+                )
+            )
+            channel = connection.channel()
+            logger.info("Conectado a RabbitMQ")
+            return connection, channel
+        except pika.exceptions.AMQPConnectionError as e:
+            logger.warning(f"No se pudo conectar a RabbitMQ: {e}, reintentando...")
+            time.sleep(5)
+
 def publish_seguro(event):
     try:
         state.queue_channel.basic_publish(

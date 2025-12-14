@@ -1,36 +1,10 @@
-from utils import get_current_phase, sync_con_coordinador, get_tareas, publish_seguro
+from utils import get_current_phase, sync_con_coordinador, get_tareas, publish_seguro, conectar_rabbit
 from state import CoordinatorState
 import state
 from log_config import logger
 import time
 import requests
 import config
-import pika
-import pika.exceptions
-
-
-def conectar_rabbit():
-    while True:
-        try:
-            connection = pika.BlockingConnection(
-                pika.ConnectionParameters(
-                    host=config.RABBIT_HOST,
-                    credentials=pika.PlainCredentials(
-                        config.RABBIT_USER,
-                        config.RABBIT_PASS
-                    ),
-                    heartbeat=30,
-                    blocked_connection_timeout=30
-                )
-            )
-            channel = connection.channel()
-            logger.info("Conectado a RabbitMQ")
-            return connection, channel
-        except pika.exceptions.AMQPConnectionError as e:
-            logger.warning(f"No se pudo conectar a RabbitMQ: {e}, reintentando...")
-            time.sleep(5)
-
-
 
 def iniciar ():
     mining = False
