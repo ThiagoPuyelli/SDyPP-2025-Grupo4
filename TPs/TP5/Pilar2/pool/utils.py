@@ -207,7 +207,7 @@ def verify_tx_signature(tx) -> bool:
 
         message = f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}".encode()
 
-        signature = base64.b64decode(tx.signature)
+        signature = base64.b64decode(tx.sign)
 
         public_key.verify(
             signature,
