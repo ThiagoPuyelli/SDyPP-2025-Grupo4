@@ -1,6 +1,5 @@
 import hashlib
 from datetime import datetime, timezone
-from TPs.TP5.Pilar2.coordinador.services.database_service import RedisBlockchainDatabase
 import config
 from state import CoordinatorState, blockchain
 from typing import Optional
@@ -78,20 +77,31 @@ def get_last_interval_start(lastPhase: datetime = None) -> datetime:
 
 def create_genesis_block() -> Optional[MinedBlock]:
     if blockchain.is_empty():
+
+        public_key_pem = """-----BEGIN PUBLIC KEY-----
+            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz9Kyr9Y4iuEt0G6nbP/W
+            77CtZW523x4YxCHvmkeHde0X0M7NXATdPBT6gRJGsNQ40qS8ST1ku5k8ajqzyoL8
+            IlV3rBFKxUJ9M+68djhZwU/VJyAOP1opj0ZBsM026ByDB+Z4/ifa1uYp9flRfH6u
+            X+zh60ovKGgeHLGv36qoSJNgX455W7eWz/SvzqlJU3sy0ajU/2cNBGOEjqv+fTkH
+            ymlWzJM/5ikzcrtVC8SXFpJdY/vCDWkZquCPQTRf2hFOb8kqZSYbamoyJdpMwytR
+            WgIZ21oFx/p1yIi8f7AJ+7DvPBQLMiGU55P1ZDcG/fRUQxl2og+SuxoRJ2LGxwB2
+            PwIDAQAB
+            -----END PUBLIC KEY-----"""
+
         genesis_transaction = Transaction(
-            source="0" * 1,
-            target="0" * 1,
-            amount=1000,
+            source="0",
+            target=public_key_pem,
+            amount=10000.0,
             timestamp=datetime.now(timezone.utc).isoformat(), 
-            sign="0" * 1
+            sign="0"
         )
         
         genesis_block = MinedBlock(
             previous_hash="0" * 1,
             transaction=genesis_transaction,
             nonce=0,
-            miner_id="0" * 1,
-            hash="0" * 1,
+            miner_id="0",
+            hash="0",
             blockchain_config={
                 "interval_duration": config.INTERVAL_DURATION,
                 "await_response_duration": config.AWAIT_RESPONSE_DURATION,
