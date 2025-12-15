@@ -79,15 +79,17 @@ def get_last_interval_start(lastPhase: datetime = None) -> datetime:
 def create_genesis_block() -> Optional[MinedBlock]:
     if blockchain.is_empty():
 
-        public_key_pem = """-----BEGIN PUBLIC KEY-----
-            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz9Kyr9Y4iuEt0G6nbP/W
-            77CtZW523x4YxCHvmkeHde0X0M7NXATdPBT6gRJGsNQ40qS8ST1ku5k8ajqzyoL8
-            IlV3rBFKxUJ9M+68djhZwU/VJyAOP1opj0ZBsM026ByDB+Z4/ifa1uYp9flRfH6u
-            X+zh60ovKGgeHLGv36qoSJNgX455W7eWz/SvzqlJU3sy0ajU/2cNBGOEjqv+fTkH
-            ymlWzJM/5ikzcrtVC8SXFpJdY/vCDWkZquCPQTRf2hFOb8kqZSYbamoyJdpMwytR
-            WgIZ21oFx/p1yIi8f7AJ+7DvPBQLMiGU55P1ZDcG/fRUQxl2og+SuxoRJ2LGxwB2
-            PwIDAQAB
-            -----END PUBLIC KEY-----"""
+        public_key_pem = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz9Kyr9Y4iuEt0G6nbP/W\n"
+            "77CtZW523x4YxCHvmkeHde0X0M7NXATdPBT6gRJGsNQ40qS8ST1ku5k8ajqzyoL8\n"
+            "IlV3rBFKxUJ9M+68djhZwU/VJyAOP1opj0ZBsM026ByDB+Z4/ifa1uYp9flRfH6u\n"
+            "X+zh60ovKGgeHLGv36qoSJNgX455W7eWz/SvzqlJU3sy0ajU/2cNBGOEjqv+fTkH\n"
+            "ymlWzJM/5ikzcrtVC8SXFpJdY/vCDWkZquCPQTRf2hFOb8kqZSYbamoyJdpMwytR\n"
+            "WgIZ21oFx/p1yIi8f7AJ+7DvPBQLMiGU55P1ZDcG/fRUQxl2og+SuxoRJ2LGxwB2\n"
+            "PwIDAQAB\n"
+            "-----END PUBLIC KEY-----\n"
+        )
 
         genesis_transaction = Transaction(
             source="0",
@@ -139,11 +141,8 @@ def verify_tx_signature(tx) -> bool:
         public_key = serialization.load_pem_public_key(
             tx.source.encode()
         )
-        logger.info("Verifying transaction signature:")
-        logger.info(f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}")
 
         message = f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}".encode()
-        logger.info(f"{message}")
         signature = base64.b64decode(tx.sign)
 
         public_key.verify(
@@ -166,16 +165,22 @@ def has_sufficient_funds(tx: Transaction) -> bool:
         return True
 
     balance = 0.0
-
+    
+    logger.debug(f"{tx}")
     chain = state.blockchain.get_chain().blocks
-
+    
+    logger.debug("transacciones para calcular fondos:")
     for block in reversed(chain):
         btx = block.transaction
-
+        
+        logger.debug(f"{btx}")
         if btx.target == tx.source:
             balance += btx.amount
 
         if btx.source == tx.source:
             balance -= btx.amount
+
+    if balance >= tx.amount:
+        return True
 
     return False
