@@ -139,9 +139,11 @@ def verify_tx_signature(tx) -> bool:
         public_key = serialization.load_pem_public_key(
             tx.source.encode()
         )
+        logger.info("Verifying transaction signature:")
+        logger.info(f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}")
 
         message = f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}".encode()
-
+        logger.info(f"{message}")
         signature = base64.b64decode(tx.sign)
 
         public_key.verify(
