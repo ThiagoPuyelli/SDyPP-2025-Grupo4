@@ -83,7 +83,7 @@ def handle_selecting_winner():
                 source="0", #generado por el coordinador
                 target=best_chain.blocks[0].miner_id,
                 amount=10, #premio fijo
-                timestamp=mono_time.get_hora_actual(),
+                timestamp=mono_time.get_hora_actual().isoformat(),
                 sign="0" #no se firma si es del coordinador
             )
         )
