@@ -6,6 +6,7 @@ from utils import adjust_difficulty, create_genesis_block, get_starting_phase
 import state
 from log_config import setup_logger_con_monotonic, logger
 from monotonic import mono_time
+from metrics import update_queue_metrics, record_cycle
 
 def scheduler():
     global logger
@@ -29,6 +30,20 @@ def scheduler():
 
         hora_actual = mono_time.get_hora_actual()
         proximo_estado = get_starting_phase(hora_actual)
+        # Actualizamos gauges en cada iteración
+        try:
+            pending_size = state.pending_transactions.size()
+        except Exception:
+            pending_size = 0
+        try:
+            active_size = state.active_transactions.size()
+        except Exception:
+            active_size = 0
+        try:
+            received_size = len(state.received_chains.get_all_chains())
+        except Exception:
+            received_size = 0
+        update_queue_metrics(pending_size, active_size, received_size)
         
         if (state.cicle_state == CoordinatorState.GIVING_TASKS and 
         proximo_estado != CoordinatorState.GIVING_TASKS):
@@ -38,6 +53,7 @@ def scheduler():
         elif (state.cicle_state == CoordinatorState.OPEN_TO_RESULTS and 
         proximo_estado != CoordinatorState.OPEN_TO_RESULTS):
             handle_selecting_winner()
+            record_cycle("completed")
             logger.info("### Fin de ciclo ###\n")
             state.cicle_state = CoordinatorState.GIVING_TASKS
             logger.info(f"[STATE] {state.cicle_state.name}")

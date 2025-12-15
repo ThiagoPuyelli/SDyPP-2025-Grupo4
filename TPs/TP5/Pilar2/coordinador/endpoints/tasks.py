@@ -3,6 +3,7 @@ from models import ActiveTransaction, Transaction
 from state import CoordinatorState
 import state
 from utils import verify_tx_signature, has_sufficient_funds
+from metrics import record_tx
 
 router = APIRouter()
 
@@ -10,24 +11,28 @@ router = APIRouter()
 async def submit_transaction(tx: Transaction):
 
     if tx.source == tx.target:
+        record_tx("reject_same_account")
         raise HTTPException(
             status_code=400,
             detail="Source and target cannot be the same"
         )
     
     if tx.amount <= 0:
+        record_tx("reject_invalid_amount")
         raise HTTPException(
             status_code=400,
             detail="Amount must be positive"
         )
     
     if tx.source == "0" or not verify_tx_signature(tx):
+        record_tx("reject_signature")
         raise HTTPException(
             status_code=400,
             detail="Invalid transaction signature"
         )
     
     if not has_sufficient_funds(tx):
+        record_tx("reject_funds")
         raise HTTPException(
             status_code=400,
             detail="Insufficient funds"
@@ -35,6 +40,7 @@ async def submit_transaction(tx: Transaction):
 
     active_tx = ActiveTransaction(transaction=tx)
     state.pending_transactions.put(active_tx)
+    record_tx("accepted")
     return {"status": "ok"}
 
 @router.get("/tasks")
@@ -50,4 +56,3 @@ async def get_task():
         "transaction": state.active_transactions.peek_all(),
         "target_prefix": state.current_target_prefix,
     }
-
