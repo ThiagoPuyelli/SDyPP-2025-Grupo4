@@ -4,8 +4,8 @@ metadata:
   name: pool-config
   namespace: pool
 data:
-  HOST_URI: "http://34.8.219.252"
-  RABBIT_HOST: "34.138.181.10"
+  HOST_URI: "http://34.110.132.153"
+  RABBIT_HOST: "35.185.40.225"
   PROCESSING_TIER: "1"
   POOL_ID: pool1
 
