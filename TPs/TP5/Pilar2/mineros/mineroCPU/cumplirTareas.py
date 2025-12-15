@@ -6,6 +6,8 @@ import time
 from models import MinedBlock
 
 def minar(data, detener_mineria):
+    pk_minado = state.pool_id if state.pool_id else config.MINER_ID
+
     start = time.perf_counter()
     transactions = data["transaction"]
     state.cant_transacciones_a_minar = len(transactions)
@@ -20,7 +22,7 @@ def minar(data, detener_mineria):
             return
         numero_encontrado, hash_resultado = conseguirHash(
             prefix, 
-            f"{previousHash} {t['source']} {t['target']} {t['amount']} {t['timestamp']} {t['sign']} {config.MINER_ID}", 
+            f"{previousHash} {t['source']} {t['target']} {t['amount']} {t['timestamp']} {t['sign']} {pk_minado}", 
             nonce_start if nonce_start is not None else 0, 
             nonce_end if nonce_end is not None else 1000000000000000000, #1000000000,
             detener_mineria)
@@ -30,7 +32,7 @@ def minar(data, detener_mineria):
                 previous_hash=previousHash,
                 transaction=t,
                 nonce=numero_encontrado,
-                miner_id=config.MINER_ID,
+                miner_id=pk_minado,
                 hash=hash_resultado
             )
             state.mined_blocks.blocks.append(nuevo_bloque)
