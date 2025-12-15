@@ -4,9 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VALUES_FILE="${SCRIPT_DIR}/values-loki-stack.yaml"
 PROMTAIL_VALUES_FILE="${SCRIPT_DIR}/values-promtail.yaml"
+PROMETHEUS_VALUES_FILE="${SCRIPT_DIR}/values-prometheus.yaml"
 NAMESPACE="observability"
 RELEASE="loki-stack"
 PROMTAIL_RELEASE="promtail"
+PROMETHEUS_RELEASE="prometheus"
 ENV_FILE="${SCRIPT_DIR}/../vault/.env"
 DASHBOARDS_DIR="${SCRIPT_DIR}/dashboards"
 
@@ -15,6 +17,7 @@ kubectl apply -f "${SCRIPT_DIR}/namespace.yaml"
 
 echo "Agregando repo de Helm grafana..."
 helm repo add grafana https://grafana.github.io/helm-charts >/dev/null
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null
 helm repo update >/dev/null
 
 if [[ ! -f "${ENV_FILE}" ]]; then
@@ -60,6 +63,14 @@ if [[ -n "${LOKI_STS}" ]]; then
 else
   echo "No se encontró StatefulSet de Loki (label app=loki,release=${RELEASE})."
 fi
+
+echo "Instalando/actualizando Prometheus como release separado (${PROMETHEUS_RELEASE})..."
+helm upgrade --install "${PROMETHEUS_RELEASE}" prometheus-community/prometheus \
+  --namespace "${NAMESPACE}" \
+  --create-namespace \
+  -f "${PROMETHEUS_VALUES_FILE}"
+
+kubectl -n "${NAMESPACE}" rollout status deploy/"${PROMETHEUS_RELEASE}"-server --timeout=300s || true
 
 echo "Instalando/actualizando Promtail como release separado (${PROMTAIL_RELEASE})..."
 helm upgrade --install "${PROMTAIL_RELEASE}" grafana/promtail \

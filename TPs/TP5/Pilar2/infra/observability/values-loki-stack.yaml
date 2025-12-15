@@ -68,6 +68,13 @@ grafana:
           jsonData:
             timeout: 60
           isDefault: true
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus-server:80
+          jsonData:
+            timeInterval: 15s
+          editable: true
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1

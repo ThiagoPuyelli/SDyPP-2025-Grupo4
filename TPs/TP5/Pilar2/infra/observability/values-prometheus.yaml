@@ -1,0 +1,17 @@
+alertmanager:
+  enabled: false
+
+pushgateway:
+  enabled: false
+
+server:
+  persistentVolume:
+    enabled: true
+    size: 5Gi
+    storageClass: standard-rwo
+  extraScrapeConfigs: |
+    - job_name: coordinador
+      metrics_path: /metrics
+      static_configs:
+        - targets:
+            - coordinador.blockchain.svc.cluster.local:8000
