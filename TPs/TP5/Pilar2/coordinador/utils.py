@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import config
 from state import CoordinatorState, blockchain
 from typing import Optional
-from models import MinedBlock, Transaction
+from models import MinedBlock, MinedChain, Transaction
 import state
 from log_config import logger
 import base64
@@ -28,12 +28,18 @@ def is_valid_hash(block, prefix):
         return False
     return True
 
-def adjust_difficulty():
+def adjust_difficulty(best_chain: MinedChain):
     ct= state.active_transactions.size()
     if ct == 0:
         logger.info("No hay transacciones activas, no se ajusta la dificultad.")
         return
-    no_minadas = (ct - len(state.received_chains.get_all_chains())) / ct   # [0 ; 1] todas minadas --- ninguna minada
+    
+    # no_minadas = [0 ; 1]  (todas minadas --- ninguna minada)
+    if best_chain is None:
+        no_minadas = 1.0
+    else:
+        no_minadas = (ct - len(best_chain.blocks)) / ct
+    
     logger.info(f"Porcentaje de transacciones minadas este ciclo: {1-no_minadas}")
     if no_minadas > 0.8 and len(state.current_target_prefix) > 1:
         state.next_target_prefix = ajustar_ceros(state.current_target_prefix, -1)

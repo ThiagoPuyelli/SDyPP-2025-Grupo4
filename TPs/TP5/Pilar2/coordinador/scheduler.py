@@ -95,7 +95,7 @@ def handle_selecting_winner():
         logger.info("⚠️ No se recibió cadena válida")
 
 
-    adjust_difficulty()
+    adjust_difficulty(best_chain)
 
     # Procesar activas: pasar las no minadas a pending, actualizar TTL o descartarlas
     for active_tx in state.active_transactions.get_all_transactions_with_ttl():
