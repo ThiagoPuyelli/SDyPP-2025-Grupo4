@@ -178,4 +178,7 @@ def has_sufficient_funds(tx: Transaction) -> bool:
         if btx.source == tx.source:
             balance -= btx.amount
 
+    if balance >= tx.amount:
+        return True
+
     return False
