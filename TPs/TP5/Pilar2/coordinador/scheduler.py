@@ -65,7 +65,7 @@ def handle_selecting_winner():
         active_tx = ActiveTransaction(
             transaction=Transaction(
                 source="0", #generado por el coordinador
-                target=best_chain[0].miner_id,
+                target=best_chain.blocks[0].miner_id,
                 amount=10, #premio fijo
                 timestamp=mono_time.get_hora_actual(),
                 sign="0" #no se firma si es del coordinador
