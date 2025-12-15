@@ -139,11 +139,8 @@ def verify_tx_signature(tx) -> bool:
         public_key = serialization.load_pem_public_key(
             tx.source.encode()
         )
-        logger.info("Verifying transaction signature:")
-        logger.info(f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}")
 
         message = f"{tx.source}|{tx.target}|{tx.amount}|{tx.timestamp}".encode()
-        logger.info(f"{message}")
         signature = base64.b64decode(tx.sign)
 
         public_key.verify(
@@ -166,12 +163,12 @@ def has_sufficient_funds(tx: Transaction) -> bool:
         return True
 
     balance = 0.0
-
+    logger.info(f"{tx}")
     chain = state.blockchain.get_chain().blocks
-
+    logger.info("transacciones para calcular fondos:")
     for block in reversed(chain):
         btx = block.transaction
-
+        logger.info(f"{btx}")
         if btx.target == tx.source:
             balance += btx.amount
 
