@@ -88,7 +88,7 @@ def create_genesis_block() -> Optional[MinedBlock]:
             "ymlWzJM/5ikzcrtVC8SXFpJdY/vCDWkZquCPQTRf2hFOb8kqZSYbamoyJdpMwytR\n"
             "WgIZ21oFx/p1yIi8f7AJ+7DvPBQLMiGU55P1ZDcG/fRUQxl2og+SuxoRJ2LGxwB2\n"
             "PwIDAQAB\n"
-            "-----END PUBLIC KEY-----"
+            "-----END PUBLIC KEY-----\n"
         )
 
         genesis_transaction = Transaction(
@@ -165,12 +165,15 @@ def has_sufficient_funds(tx: Transaction) -> bool:
         return True
 
     balance = 0.0
-    logger.info(f"{tx}")
+    
+    logger.debug(f"{tx}")
     chain = state.blockchain.get_chain().blocks
-    logger.info("transacciones para calcular fondos:")
+    
+    logger.debug("transacciones para calcular fondos:")
     for block in reversed(chain):
         btx = block.transaction
-        logger.info(f"{btx}")
+        
+        logger.debug(f"{btx}")
         if btx.target == tx.source:
             balance += btx.amount
 
