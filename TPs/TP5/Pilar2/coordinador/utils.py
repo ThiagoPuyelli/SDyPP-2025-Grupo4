@@ -116,6 +116,7 @@ def create_genesis_block() -> Optional[MinedBlock]:
                 "await_response_duration": config.AWAIT_RESPONSE_DURATION,
                 "max_mining_attempts": config.MAX_MINING_ATTEMPTS,
                 "accepted_algorithm": config.ACCEPTED_ALGORITHM,
+                "prize_amount": config.PRIZE_AMOUNT,
             }
         )
 

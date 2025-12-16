@@ -1,6 +1,6 @@
 import time
 from models import ActiveTransaction, Transaction
-from config import MAX_MINING_ATTEMPTS
+from config import MAX_MINING_ATTEMPTS, PRIZE_AMOUNT
 from state import CoordinatorState
 from utils import adjust_difficulty, create_genesis_block, get_starting_phase
 import state
@@ -82,7 +82,7 @@ def handle_selecting_winner():
             transaction=Transaction(
                 source="0", #generado por el coordinador
                 target=best_chain.blocks[0].miner_id,
-                amount=10, #premio fijo
+                amount=PRIZE_AMOUNT, #premio fijo
                 timestamp=mono_time.get_hora_actual().isoformat(),
                 sign="0" #no se firma si es del coordinador
             )
