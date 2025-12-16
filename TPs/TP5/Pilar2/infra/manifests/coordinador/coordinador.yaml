@@ -67,7 +67,7 @@ spec:
               vault agent -config=/vault/config/agent.hcl -log-level=info
       containers:
         - name: coordinador
-          image: matiasherrneder/blockchain-coordinador:d9e3cc2
+          image: matiasherrneder/blockchain-coordinador:3c5bdd8
           ports:
             - containerPort: 8000
           envFrom:
