@@ -3,6 +3,9 @@ from models import MinedChain
 from services.subscribers import LocalSubscribers
 from typing import Dict
 from fastapi import WebSocket
+from prize_handler import PrizeHandler, MinadasRepository
+import os
+import redis
 
 class CoordinatorState(str, Enum):
     # UNSET = "server starting, only accepting transactions to queue"
@@ -28,3 +31,14 @@ previous_hash = ""
 prefix = ""
 
 nonce_start = 0
+
+redis_client = redis.Redis(
+    host=os.getenv("REDIS_HOST", "localhost"),
+    port=int(os.getenv("REDIS_PORT", 6379)),
+    # db=int(get_secret("REDIS_DB", "0")),
+    db=int(os.getenv("REDIS_DB", "0")),
+    password=os.getenv("REDIS_PASSWORD"),
+    decode_responses=True,
+)
+repo_cadenas_minadas = MinadasRepository(redis_client=redis_client)
+prize_handler = PrizeHandler(repo_cadenas_minadas)

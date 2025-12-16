@@ -20,6 +20,7 @@ def iniciar ():
                 config.AWAIT_RESPONSE_DURATION = data["blockchain_config"]["await_response_duration"]
                 config.MAX_MINING_ATTEMPTS = data["blockchain_config"]["max_mining_attempts"]
                 config.ACCEPTED_ALGORITHM = data["blockchain_config"]["accepted_algorithm"]
+                config.BLOCKCHAIN_PRIZE_AMOUNT = data["blockchain_config"]["prize_amount"]
                 break
             else:
                 logger.info(f"Error HTTP {response.status_code}, reintentando...")
