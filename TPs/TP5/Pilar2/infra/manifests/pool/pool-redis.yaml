@@ -28,6 +28,8 @@ spec:
       labels:
         app: redis
     spec:
+      nodeSelector:
+        cloud.google.com/gke-nodepool: infraestructura
       containers:
         - name: redis
           image: redis:7

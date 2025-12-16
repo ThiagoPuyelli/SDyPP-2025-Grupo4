@@ -102,7 +102,7 @@ spec:
         app: rabbitmq
     spec:
       nodeSelector:
-          role: infraestructura
+        cloud.google.com/gke-nodepool: infraestructura
       containers:
         - name: rabbitmq
           image: rabbitmq:3-management

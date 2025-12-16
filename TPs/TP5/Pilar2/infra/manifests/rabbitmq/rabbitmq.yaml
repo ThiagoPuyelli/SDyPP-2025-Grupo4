@@ -31,6 +31,8 @@ spec:
         app: rabbitmq
     spec:
       serviceAccountName: rabbitmq-sa
+      nodeSelector:
+        cloud.google.com/gke-nodepool: infraestructura
       initContainers:
         - name: vault-agent-init
           image: hashicorp/vault:1.15.4
