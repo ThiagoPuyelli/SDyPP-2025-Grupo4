@@ -226,10 +226,24 @@ def handle_frenar_minado():
         mining_thread.start()
 
 def minar_y_enviar(data):
+    # modifico la data aca para minar con el challenge del share, un cero menos
+    original_prefix = data["target_prefix"]
+    
+    if len(data["target_prefix"]) > 1:
+        data["target_prefix"] = data["target_prefix"][:-1]
+    
     minar(data, stop_mining_event)
 
     if len(state.mined_blocks.blocks) > 0:
         enviar_resultados()
-
+        
+        # if se mino un share, seguir minando
+        if not state.mined_blocks.blocks[0].hash.startswith(original_prefix) and \
+        state.mined_blocks.blocks[0].hash.startswith(data["target_prefix"]):
+            logger.info("Share minado")
+            data["nonce_start"] = state.mined_blocks.blocks[0].nonce + 1
+            data["target_prefix"] = original_prefix
+            minar_y_enviar(data)
+    
 
 iniciar()

@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Extra
 from typing import List
-from datetime import datetime
 
 class Transaction(BaseModel):
     source: str # pk del remitente
@@ -23,9 +22,9 @@ class MinedChain(BaseModel):
 
 class Miner(BaseModel):
     id: str
-    processing_tier: int
-    class Config:
-        arbitrary_types_allowed = True
+    share_count: int
+    # class Config:
+    #     arbitrary_types_allowed = True
 
 class MinersList(BaseModel):
     miners: List[Miner]

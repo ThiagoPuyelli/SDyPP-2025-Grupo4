@@ -20,7 +20,6 @@ mono_time = None
 cant_transacciones_a_minar = 0
 
 mineros_activos = LocalSubscribers()
-conexiones_ws: Dict[str, WebSocket] = {}
 
 queue_channel = None
 rabbit_connection = None

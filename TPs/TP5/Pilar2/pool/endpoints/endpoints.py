@@ -35,6 +35,9 @@ async def get_transaction():
 ## recibir cadenas minadas, evaluarlas, si esta bien cortar el minado de los demas
 @router.post("/results")
 async def submit_result(chain: MinedChain):
+    global is_share
+    is_share = False
+
     if not chain.blocks:
         raise HTTPException(
             status_code=400,
@@ -49,11 +52,16 @@ async def submit_result(chain: MinedChain):
             detail="Block does not chain"
         )
 
+    # valido hash completo
     if not is_valid_hash(block, state.prefix):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Block is invalid"
-        )
+        # valido si es un share
+        if len(state.prefix) <= 1 or not is_valid_hash(block, state.prefix[:-1]):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Block is invalid"
+            )
+        else: # (es un share)
+            is_share = True
 
     if not state.queue_channel:
         raise HTTPException(
@@ -78,17 +86,23 @@ async def submit_result(chain: MinedChain):
                     detail="Transaction already mined"
                 )
 
-            t.mined = True
-            state.mined_blocks.blocks.append(block)
-            state.previous_hash = block.hash
+            if is_share:
+                state.mineros_activos.share_recibido(block.miner_id)
+                logger.info(f"Share recibida: {block}")
+
+            else:
+                t.mined = True
+                state.mined_blocks.blocks.append(block)
+                state.previous_hash = block.hash
+                
+                event = {
+                    "type": "NEW_TX"
+                }
+                publish_seguro(event)
+                
+                logger.info("Notificando mineros")
+                logger.info(f"Workload recibida: {block}")
             
-            event = {
-                "type": "NEW_TX"
-            }
-            publish_seguro(event)
-            
-            logger.info("Notificando mineros")
-            logger.info(f"Workload recibida: {block}")
             return {"status": "received"}
         
     raise HTTPException(

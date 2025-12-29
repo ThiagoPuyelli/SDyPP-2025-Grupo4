@@ -42,6 +42,7 @@ def iniciar ():
             if not mining and not results_delivered:
 
                 get_tareas()
+                state.mineros_activos.borrar_todos()
 
                 event = {
                     "type": "NEW_TX"
@@ -70,6 +71,7 @@ def iniciar ():
         time.sleep(1)
 
 def enviar_resultados():
+    state.prize_handler.entregar_premios()
     try:
         while True:
             logger.info(state.mined_blocks.model_dump())
@@ -77,6 +79,7 @@ def enviar_resultados():
             if res.status_code == 200:
                 data = res.json()
                 if data.get("status") == "received":
+                    state.prize_handler.guardar_cadena_entregada(state.mined_blocks, state.mineros_activos.get_all_miners())
                     logger.info("Resultados recibidos por el coordinador")
                     break
             elif res.status_code == 400:

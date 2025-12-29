@@ -1,12 +1,13 @@
+from enum import Enum
 import json
 from typing import List
 import redis
 import time
 import requests
 import config
-from models import MinedChain, MinedBlock, Transaction
+from models import MinedChain, MinedBlock, Transaction, Miner
 import base64
-from config import BLOCKCHAIN_PRIZE_AMOUNT
+from config import BLOCKCHAIN_PRIZE_AMOUNT, BASE_REWARD_PERCENTAGE
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
@@ -17,16 +18,16 @@ class MinadasRepository:
         self.redis = redis_client
         self.redis_key = redis_key
 
-    def add(self, chain: MinedChain, miners: List[str]) -> None:
+    def add(self, chain: MinedChain, miners: List[Miner]) -> None:
         payload = {
             "chain": chain.model_dump(),
             "miners": miners,
         }
         self.redis.rpush(self.redis_key, json.dumps(payload))
 
-    def get_all(self) -> List[tuple[MinedChain, List[str]]]:
+    def get_all(self) -> List[tuple[MinedChain, List[Miner]]]:
         raw_items = self.redis.lrange(self.redis_key, 0, -1)
-        result: List[tuple[MinedChain, List[str]]] = []
+        result: List[tuple[MinedChain, List[Miner]]] = []
 
         for item in raw_items:
             payload = json.loads(item)
@@ -49,13 +50,16 @@ class MinadasRepository:
         self.redis.delete(self.redis_key)
 
 
-
 class PrizeHandler:
+    class BlockInChainStatus(Enum):
+        NOT_IN_CHAIN = 0
+        IN_CHAIN_OTHER_MINER = 1
+        IN_CHAIN_POOL = 2
 
     def __init__(self, minadas_repo: MinadasRepository):
         self.minadas = minadas_repo
 
-    def guardar_cadena_entregada(self, chain: MinedChain, miners: List[str]) -> None:
+    def guardar_cadena_entregada(self, chain: MinedChain, miners: List[Miner]) -> None:
         self.minadas.add(chain, miners)
 
     def entregar_premios(self) -> None:
@@ -66,12 +70,14 @@ class PrizeHandler:
             raise e
 
         for cadena, miners in cadenas:
-            state = self._is_block_en_chain_miners(cadena.blocks[0], blockchain, miners)
-            
-            if state == 2: 
-                self._repartir_premio(miners, BLOCKCHAIN_PRIZE_AMOUNT)
-            if state == 1 or state == 2: 
+            state = self._is_block_en_chain(cadena.blocks[0], blockchain)
+
+            if not state == self.BlockInChainStatus.NOT_IN_CHAIN: 
                 self.minadas.remove(cadena)
+                
+            if state == self.BlockInChainStatus.IN_CHAIN_POOL: 
+                self._repartir_premio(miners, BLOCKCHAIN_PRIZE_AMOUNT)
+                
     
     def _obtener_blockchain_actual(self) -> MinedChain:
         c = 0
@@ -87,8 +93,8 @@ class PrizeHandler:
                 if c > 3: raise Exception("Error al conectar con el coordinador")
                 c += 1
                 time.sleep(3)
-    
-    def _is_block_en_chain_miners(self, block: MinedBlock, chain: MinedChain, miners: List[str]) -> int:
+
+    def _is_block_en_chain(self, block: MinedBlock, chain: MinedChain) -> BlockInChainStatus:
         for chain_block in chain.blocks:
             if (chain_block.previous_hash == block.previous_hash and
             chain_block.nonce == block.nonce and
@@ -100,22 +106,24 @@ class PrizeHandler:
             chain_block.transaction.sign == block.transaction.sign):
 
                 if block.miner_id == config.POOL_ID:
-                    return 2
+                    return self.BlockInChainStatus.IN_CHAIN_POOL
                 else: 
-                    return 1
-        
-        return 0
+                    return self.BlockInChainStatus.IN_CHAIN_OTHER_MINER
+
+        return self.BlockInChainStatus.NOT_IN_CHAIN
                 
-    def _repartir_premio(self, miners: List[str], amount: float) -> None:
-        amount_per_miner = float(amount / len(miners))
-        
+    def _repartir_premio(self, miners: List[Miner], amount: float) -> None:
+        total_shares = sum(miner.share_count for miner in miners)
+
         for miner in miners:
+            prize_amount = float(amount * (((1 - BASE_REWARD_PERCENTAGE) * miner.share_count / total_shares) + 
+                                           (BASE_REWARD_PERCENTAGE / len(miners))))
             tx = Transaction (
                 source= config.POOL_ID,
-                target= miner,
-                amount= amount_per_miner,
+                target= miner.id,
+                amount= prize_amount,
                 timestamp= "string",
-                sign= self._sign_transaction(config.POOL_PK, config.POOL_ID, miner, amount_per_miner, "string"),
+                sign= self._sign_transaction(config.POOL_PK, config.POOL_ID, miner.id, prize_amount, "string"),
             )
             while True:
                 try:

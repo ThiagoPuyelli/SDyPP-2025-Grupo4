@@ -5,6 +5,7 @@ AWAIT_RESPONSE_DURATION = 0
 MAX_MINING_ATTEMPTS = 0
 ACCEPTED_ALGORITHM = ""
 BLOCKCHAIN_PRIZE_AMOUNT = 10
+BASE_REWARD_PERCENTAGE = 0.2  # 20% del premio se reparte equitativamente entre los mineros, sin importar velocidad de minado de cada uno
 
 
 URI = os.getenv("HOST_URI", "http://35.244.137.250")

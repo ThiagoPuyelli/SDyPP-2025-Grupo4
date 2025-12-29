@@ -4,10 +4,6 @@ from models import Miner
 
 class Subscribers(ABC):
     @abstractmethod
-    def validar_minero(self, miner_id: str) -> bool:
-        pass
-    
-    @abstractmethod
     def agregar_minero(self, miner: Miner):
         pass
 
@@ -16,18 +12,16 @@ class Subscribers(ABC):
         pass
 
     @abstractmethod
-    def eliminar_minero(self, miner_id: str) -> None:
+    def borrar_todos(self) -> None:
+        pass
+
+    @abstractmethod
+    def share_recibido(self, miner_id: str) -> None:
         pass
 
 class LocalSubscribers(Subscribers):
     def __init__(self):
-        self.mineros: List[Miner] = []
-    
-    def validar_minero(self, miner_id: str) -> bool:
-        for m in self.mineros:
-            if m.id == miner_id:
-                return True
-        return False
+        self.mineros: List[Miner] = [] 
 
     def agregar_minero(self, miner: Miner):
         self.mineros.append(miner)
@@ -35,8 +29,17 @@ class LocalSubscribers(Subscribers):
     def get_all_miners(self) -> List[Miner]:
         return self.mineros
     
-    def eliminar_minero(self, miner_id: str) -> None:
-        self.mineros = [m for m in self.mineros if m.id != miner_id]
-    
+    def borrar_todos(self) -> None:
+        self.mineros = []
+
+    def share_recibido(self, miner_id: str) -> None:
+        for miner in self.mineros:
+            if miner.id == miner_id:
+                miner.share_count += 1
+                return
+            
+        miner = Miner(id=miner_id, share_count=1)
+        self.agregar_minero(miner)
+
 # class RedisSubscribers(Subscribers):
     

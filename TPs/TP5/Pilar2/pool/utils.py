@@ -154,38 +154,6 @@ def is_valid_hash(block, prefix):
         return False
     return True
 
-
-MAX_RETRIES = 3          # número máximo de intentos
-RETRY_DELAY = 5          # segundos entre intentos
-
-async def notify_single_miner(miner_id: str, message: str) -> bool:
-    ws = state.conexiones_ws.get(miner_id)
-    if not ws:
-        logger.warning(f"No WS connection for {miner_id}")
-        return False
-
-    try:
-        await ws.send_text(message)
-        return True
-    except Exception as e:
-        logger.error(f"Error sending WS to {miner_id}: {e}")
-        state.conexiones_ws.pop(miner_id, None)
-        return False
-
-async def notify_miners_new_block():
-    to_remove = []
-
-    for miner_id, ws in state.conexiones_ws.items():
-        try:
-            await ws.send_text("NEW_BLOCK")
-        except:
-            logger.error(f"Failed to notify {miner_id}")
-            to_remove.append(miner_id)
-
-    # remover desconectados
-    for miner_id in to_remove:
-        state.conexiones_ws.pop(miner_id, None)
-
 def tx_signature(tx):
     return (
         tx.source,
