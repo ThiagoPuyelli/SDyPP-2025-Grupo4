@@ -132,7 +132,7 @@ class PrizeHandler:
             )
             while True:
                 try:
-                    response = requests.post(config.URI + '/tasks', json=tx, timeout=5)
+                    response = requests.post(config.URI + '/tasks', json=tx.model_dump(), timeout=5)
                     if response.status_code == 200:
                         break
                     else:
