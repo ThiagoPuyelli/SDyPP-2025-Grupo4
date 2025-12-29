@@ -1,6 +1,6 @@
 from enum import Enum
 import json
-from typing import List
+from typing import List, Tuple
 import redis
 import time
 import requests
@@ -21,18 +21,18 @@ class MinadasRepository:
     def add(self, chain: MinedChain, miners: List[Miner]) -> None:
         payload = {
             "chain": chain.model_dump(),
-            "miners": miners,
+            "miners": [m.model_dump() for m in miners],
         }
         self.redis.rpush(self.redis_key, json.dumps(payload))
 
-    def get_all(self) -> List[tuple[MinedChain, List[Miner]]]:
+    def get_all(self) -> List[Tuple[MinedChain, List[Miner]]]:
         raw_items = self.redis.lrange(self.redis_key, 0, -1)
-        result: List[tuple[MinedChain, List[Miner]]] = []
+        result: List[Tuple[MinedChain, List[Miner]]] = []
 
         for item in raw_items:
             payload = json.loads(item)
             chain = MinedChain(**payload["chain"])
-            miners = payload.get("miners", [])
+            miners = [Miner(**m) for m in payload.get("miners", [])]
             result.append((chain, miners))
 
         return result
@@ -40,9 +40,11 @@ class MinadasRepository:
     def remove(self, chain: MinedChain) -> None:
         raw_items = self.redis.lrange(self.redis_key, 0, -1)
 
+        target_chain = chain.model_dump()
+
         for item in raw_items:
             payload = json.loads(item)
-            if payload.get("chain") == chain.model_dump():
+            if payload.get("chain") == target_chain:
                 self.redis.lrem(self.redis_key, 1, item)
                 break
 
