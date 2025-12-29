@@ -88,11 +88,14 @@ class PrizeHandler:
                 response = requests.get(config.URI + '/chain', timeout=5)
                 if response.ok:
                     data = response.json()
-                    return data["blocks"]
+                    return MinedChain(
+                        blocks=[MinedBlock(**b) for b in data["blocks"]]
+                    )
                 else:
                     raise Exception("Error al conectar con el coordinador")
-            except requests.exceptions.RequestException as e:
-                if c > 3: raise Exception("Error al conectar con el coordinador")
+            except requests.exceptions.RequestException:
+                if c > 3:
+                    raise Exception("Error al conectar con el coordinador")
                 c += 1
                 time.sleep(3)
 
