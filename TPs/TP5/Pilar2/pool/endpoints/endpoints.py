@@ -34,7 +34,7 @@ async def get_transaction():
 
 ## recibir cadenas minadas, evaluarlas, si esta bien cortar el minado de los demas
 @router.post("/results")
-async def submit_result(chain: MinedChain):
+async def submit_result(chain: MinedChain, miner_pk: str = Query(..., description="Public key del minero")):
     global is_share
     is_share = False
 
@@ -45,6 +45,12 @@ async def submit_result(chain: MinedChain):
         )
     
     block = chain.blocks[0]
+
+    if block.miner_id != config.POOL_ID:
+        raise HTTPException(
+            status_code=400,
+            detail="Miner ID does not match this pool's ID"
+        )
     
     if block.previous_hash != state.previous_hash:
         raise HTTPException(
@@ -86,8 +92,9 @@ async def submit_result(chain: MinedChain):
                     detail="Transaction already mined"
                 )
 
+            state.mineros_activos.share_recibido(miner_pk)
+            
             if is_share:
-                state.mineros_activos.share_recibido(block.miner_id)
                 logger.info(f"Share recibida: {block}")
 
             else:

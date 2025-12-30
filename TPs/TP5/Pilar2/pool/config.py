@@ -4,8 +4,9 @@ INTERVAL_DURATION = 0
 AWAIT_RESPONSE_DURATION = 0
 MAX_MINING_ATTEMPTS = 0
 ACCEPTED_ALGORITHM = ""
-BLOCKCHAIN_PRIZE_AMOUNT = 10
+BLOCKCHAIN_PRIZE_AMOUNT = 10 - 1 # 1 es la comision del pool
 BASE_REWARD_PERCENTAGE = 0.2  # 20% del premio se reparte equitativamente entre los mineros, sin importar velocidad de minado de cada uno
+PRIZE_DECIMALS = 8
 
 
 URI = os.getenv("HOST_URI", "http://35.244.137.250")

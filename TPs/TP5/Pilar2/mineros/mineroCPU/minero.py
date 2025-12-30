@@ -133,6 +133,7 @@ def enviar_resultados():
             logger.info(state.mined_blocks.model_dump())
             res = requests.post(
                 config.URI + "/results", 
+                params={"miner_pk": config.MINER_ID},
                 json=state.mined_blocks.model_dump(), 
                 timeout=5
             )

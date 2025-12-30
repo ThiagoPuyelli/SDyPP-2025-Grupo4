@@ -7,11 +7,17 @@ import requests
 import config
 from models import MinedChain, MinedBlock, Transaction, Miner
 import base64
-from config import BLOCKCHAIN_PRIZE_AMOUNT, BASE_REWARD_PERCENTAGE
+from config import BLOCKCHAIN_PRIZE_AMOUNT, BASE_REWARD_PERCENTAGE, PRIZE_DECIMALS
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from log_config import logger
+from decimal import Decimal, ROUND_DOWN
 
+def floor_n(value: float, n: int) -> float:
+    q = Decimal('1.' + '0' * n)
+    return float(
+        Decimal(str(value)).quantize(q, rounding=ROUND_DOWN)
+    )
 
 class MinadasRepository:
 
@@ -122,8 +128,9 @@ class PrizeHandler:
         total_shares = sum(miner.share_count for miner in miners)
 
         for miner in miners:
-            prize_amount = float(amount * (((1 - BASE_REWARD_PERCENTAGE) * miner.share_count / total_shares) + 
+            prize_amount_raw = float(amount * (((1 - BASE_REWARD_PERCENTAGE) * miner.share_count / total_shares) + 
                                            (BASE_REWARD_PERCENTAGE / len(miners))))
+            prize_amount = floor_n(prize_amount_raw, PRIZE_DECIMALS)
             tx = Transaction (
                 source= config.POOL_ID,
                 target= miner.id,
@@ -131,7 +138,7 @@ class PrizeHandler:
                 timestamp= "string",
                 sign= self._sign_transaction(config.POOL_PK, config.POOL_ID, miner.id, prize_amount, "string"),
             )
-            logger.info(f"Enviando transaccion al coordinador: {tx.model_dump()}")
+            logger.info(f"Enviando transaccion al coordinador: {json.dumps(tx.model_dump(), ensure_ascii=False)}")
             while True:
                 try:
                     response = requests.post(config.URI + '/tasks', json=tx.model_dump(), timeout=5)
