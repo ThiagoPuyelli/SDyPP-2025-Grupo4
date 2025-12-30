@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: pool
-          image: matiasherrneder/blockchain-pool:e868d02
+          image: matiasherrneder/blockchain-pool:0a7b9d7
           ports:
             - containerPort: 8000
           envFrom:
