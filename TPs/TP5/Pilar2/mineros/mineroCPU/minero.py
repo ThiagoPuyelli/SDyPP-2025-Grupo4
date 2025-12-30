@@ -228,22 +228,30 @@ def handle_frenar_minado():
 def minar_y_enviar(data):
     # modifico la data aca para minar con el challenge del share, un cero menos
     original_prefix = data["target_prefix"]
-    
-    if len(data["target_prefix"]) > 1:
-        data["target_prefix"] = data["target_prefix"][:-1]
-    
-    minar(data, stop_mining_event)
+    share_prefix = original_prefix[:-1] if len(original_prefix) > 1 else original_prefix
 
-    if len(state.mined_blocks.blocks) > 0:
+    trabajo = data.copy()
+    trabajo["target_prefix"] = share_prefix
+
+    while not stop_mining_event.is_set():
+        state.mined_blocks.blocks.clear()
+
+        minar(trabajo, stop_mining_event)
+
+        if not state.mined_blocks.blocks:
+            return
+
+        bloque = state.mined_blocks.blocks[0]
         enviar_resultados()
-        
-        # if se mino un share, seguir minando
-        if not state.mined_blocks.blocks[0].hash.startswith(original_prefix) and \
-        state.mined_blocks.blocks[0].hash.startswith(data["target_prefix"]):
-            logger.info("Share minado")
-            data["nonce_start"] = state.mined_blocks.blocks[0].nonce + 1
-            data["target_prefix"] = original_prefix
-            minar_y_enviar(data)
-    
+
+        # ¿bloque real?
+        if bloque.hash.startswith(original_prefix):
+            logger.info("Bloque válido encontrado 🎉")
+            return
+
+        # share valido → seguir
+        if bloque.hash.startswith(share_prefix):
+            logger.info("Share minado ✅, continuando minado...")
+            trabajo["nonce_start"] = bloque.nonce + 1
 
 iniciar()
