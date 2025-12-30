@@ -10,6 +10,7 @@ import base64
 from config import BLOCKCHAIN_PRIZE_AMOUNT, BASE_REWARD_PERCENTAGE
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+from log_config import logger
 
 
 class MinadasRepository:
@@ -130,6 +131,7 @@ class PrizeHandler:
                 timestamp= "string",
                 sign= self._sign_transaction(config.POOL_PK, config.POOL_ID, miner.id, prize_amount, "string"),
             )
+            logger.info(f"Enviando transaccion al coordinador: {tx.model_dump()}")
             while True:
                 try:
                     response = requests.post(config.URI + '/tasks', json=tx.model_dump(), timeout=5)
