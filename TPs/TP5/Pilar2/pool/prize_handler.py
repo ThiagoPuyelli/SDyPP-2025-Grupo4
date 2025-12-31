@@ -77,21 +77,23 @@ class PrizeHandler:
         if not self._lock.acquire(blocking=False):
             logger.info("❌ Entrega de premios todavia en proceso, se omite nueva llamada ❌")
             return
-        
-        cadenas = self.minadas.get_all()
-        try:
-            blockchain = self._obtener_blockchain_actual()
-        except Exception as e:
-            raise e
+        try: 
+            cadenas = self.minadas.get_all()
+            try:
+                blockchain = self._obtener_blockchain_actual()
+            except Exception as e:
+                raise e
 
-        for cadena, miners in cadenas:
-            state = self._is_block_en_chain(cadena.blocks[0], blockchain)
+            for cadena, miners in cadenas:
+                state = self._is_block_en_chain(cadena.blocks[0], blockchain)
 
-            if not state == self.BlockInChainStatus.NOT_IN_CHAIN: 
-                self.minadas.remove(cadena)
-                
-            if state == self.BlockInChainStatus.IN_CHAIN_POOL: 
-                self._repartir_premio(miners, BLOCKCHAIN_PRIZE_AMOUNT)
+                if not state == self.BlockInChainStatus.NOT_IN_CHAIN: 
+                    self.minadas.remove(cadena)
+                    
+                if state == self.BlockInChainStatus.IN_CHAIN_POOL: 
+                    self._repartir_premio(miners, BLOCKCHAIN_PRIZE_AMOUNT)
+        finally:
+            self._lock.release()
                 
     
     def _obtener_blockchain_actual(self) -> MinedChain:
