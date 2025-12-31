@@ -39,5 +39,5 @@ redis_client = redis.Redis(
     password=os.getenv("REDIS_PASSWORD"),
     decode_responses=True,
 )
-repo_cadenas_minadas = MinadasRepository(redis_client=redis_client)
-prize_handler = PrizeHandler(repo_cadenas_minadas)
+
+prize_handler = PrizeHandler(redis_client)

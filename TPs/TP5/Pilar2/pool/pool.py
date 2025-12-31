@@ -22,6 +22,7 @@ def iniciar ():
                 config.MAX_MINING_ATTEMPTS = data["blockchain_config"]["max_mining_attempts"]
                 config.ACCEPTED_ALGORITHM = data["blockchain_config"]["accepted_algorithm"]
                 config.BLOCKCHAIN_PRIZE_AMOUNT = data["blockchain_config"]["prize_amount"]
+                config.MAX_TRANSACTION_AGE_SECONDS = config.INTERVAL_DURATION * (config.MAX_MINING_ATTEMPTS + 2)
                 break
             else:
                 logger.info(f"Error HTTP {response.status_code}, reintentando...")

@@ -7,6 +7,7 @@ ACCEPTED_ALGORITHM = ""
 BLOCKCHAIN_PRIZE_AMOUNT = 10 - 1 # 1 es la comision del pool
 BASE_REWARD_PERCENTAGE = 0.2  # 20% del premio se reparte equitativamente entre los mineros, sin importar velocidad de minado de cada uno
 PRIZE_DECIMALS = 8
+MAX_TRANSACTION_AGE_SECONDS = 600  # cantidad de segundos que espero hasta reenviar una transaccion de recompensa al coordinador (lo calculo cuando pido la config)
 
 
 URI = os.getenv("HOST_URI", "http://35.244.137.250")
