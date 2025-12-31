@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from log_config import logger
 from decimal import Decimal, ROUND_DOWN
+import threading
 
 def floor_n(value: float, n: int) -> float:
     q = Decimal('1.' + '0' * n)
@@ -67,11 +68,16 @@ class PrizeHandler:
 
     def __init__(self, minadas_repo: MinadasRepository):
         self.minadas = minadas_repo
+        self._lock = threading.Lock()
 
     def guardar_cadena_entregada(self, chain: MinedChain, miners: List[Miner]) -> None:
         self.minadas.add(chain, miners)
 
     def entregar_premios(self) -> None:
+        if not self._lock.acquire(blocking=False):
+            logger.info("❌ Entrega de premios todavia en proceso, se omite nueva llamada ❌")
+            return
+        
         cadenas = self.minadas.get_all()
         try:
             blockchain = self._obtener_blockchain_actual()

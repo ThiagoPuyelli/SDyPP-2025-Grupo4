@@ -1,3 +1,4 @@
+import threading
 from utils import get_current_phase, sync_con_coordinador, get_tareas, publish_seguro, conectar_rabbit
 from state import CoordinatorState
 import state
@@ -43,6 +44,11 @@ def iniciar ():
 
                 get_tareas()
                 state.mineros_activos.borrar_todos()
+                
+                threading.Thread(
+                    target=state.prize_handler.entregar_premios,
+                    daemon=True
+                ).start()
 
                 event = {
                     "type": "NEW_TX"
@@ -71,7 +77,6 @@ def iniciar ():
         time.sleep(1)
 
 def enviar_resultados():
-    state.prize_handler.entregar_premios()
     try:
         while True:
             logger.info(state.mined_blocks.model_dump())
