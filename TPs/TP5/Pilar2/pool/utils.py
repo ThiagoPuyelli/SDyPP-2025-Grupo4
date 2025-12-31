@@ -45,7 +45,7 @@ def publish_seguro(event):
             routing_key="",
             body=json.dumps(event)
         )
-    except pika.exceptions.AMQPError as e:
+    except (pika.exceptions.AMQPError, ConnectionResetError, OSError) as e:
         logger.error(f"Error publicando en RabbitMQ: {e}, reconectando...")
         try:
             state.rabbit_connection.close()
