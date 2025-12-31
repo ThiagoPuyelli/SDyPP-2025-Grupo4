@@ -13,12 +13,18 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from log_config import logger
 from decimal import Decimal, ROUND_DOWN
 import threading
+import state
 
 def floor_n(value: float, n: int) -> float:
     q = Decimal('1.' + '0' * n)
     return float(
         Decimal(str(value)).quantize(q, rounding=ROUND_DOWN)
     )
+
+class BlockInChain(Enum):
+    NOT_IN_CHAIN = 0
+    IN_CHAIN_OTHER_MINER = 1
+    IN_CHAIN_POOL = 2
 
 class MinadasRepository:
 
@@ -61,10 +67,6 @@ class MinadasRepository:
 
 
 class PrizeHandler:
-    class BlockInChainStatus(Enum):
-        NOT_IN_CHAIN = 0
-        IN_CHAIN_OTHER_MINER = 1
-        IN_CHAIN_POOL = 2
 
     def __init__(self, minadas_repo: MinadasRepository):
         self.minadas = minadas_repo
@@ -87,10 +89,10 @@ class PrizeHandler:
             for cadena, miners in cadenas:
                 state = self._is_block_en_chain(cadena.blocks[0], blockchain)
 
-                if not state == self.BlockInChainStatus.NOT_IN_CHAIN: 
+                if not state == BlockInChain.NOT_IN_CHAIN: 
                     self.minadas.remove(cadena)
                     
-                if state == self.BlockInChainStatus.IN_CHAIN_POOL: 
+                if state == BlockInChain.IN_CHAIN_POOL: 
                     self._repartir_premio(miners, BLOCKCHAIN_PRIZE_AMOUNT)
         finally:
             self._lock.release()
@@ -114,7 +116,7 @@ class PrizeHandler:
                 c += 1
                 time.sleep(3)
 
-    def _is_block_en_chain(self, block: MinedBlock, chain: MinedChain) -> BlockInChainStatus:
+    def _is_block_en_chain(self, block: MinedBlock, chain: MinedChain) -> BlockInChain:
         for chain_block in chain.blocks:
             if (chain_block.previous_hash == block.previous_hash and
             chain_block.nonce == block.nonce and
@@ -126,11 +128,11 @@ class PrizeHandler:
             chain_block.transaction.sign == block.transaction.sign):
 
                 if block.miner_id == config.POOL_ID:
-                    return self.BlockInChainStatus.IN_CHAIN_POOL
+                    return BlockInChain.IN_CHAIN_POOL
                 else: 
-                    return self.BlockInChainStatus.IN_CHAIN_OTHER_MINER
+                    return BlockInChain.IN_CHAIN_OTHER_MINER
 
-        return self.BlockInChainStatus.NOT_IN_CHAIN
+        return BlockInChain.NOT_IN_CHAIN
                 
     def _repartir_premio(self, miners: List[Miner], amount: float) -> None:
         total_shares = sum(miner.share_count for miner in miners)
@@ -139,12 +141,13 @@ class PrizeHandler:
             prize_amount_raw = float(amount * (((1 - BASE_REWARD_PERCENTAGE) * miner.share_count / total_shares) + 
                                            (BASE_REWARD_PERCENTAGE / len(miners))))
             prize_amount = floor_n(prize_amount_raw, PRIZE_DECIMALS)
+            timest = state.mono_time.get_hora_actual().isoformat()
             tx = Transaction (
                 source= config.POOL_ID,
                 target= miner.id,
                 amount= prize_amount,
-                timestamp= "string",
-                sign= self._sign_transaction(config.POOL_PK, config.POOL_ID, miner.id, prize_amount, "string"),
+                timestamp= timest,
+                sign= self._sign_transaction(config.POOL_PK, config.POOL_ID, miner.id, prize_amount, timest),
             )
             logger.info(f"Enviando transaccion al coordinador: {json.dumps(tx.model_dump(), ensure_ascii=False)}")
             while True:
