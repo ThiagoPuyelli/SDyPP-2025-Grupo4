@@ -44,4 +44,7 @@ def setup_logger_con_monotonic(hora_inicio, start_monotonic, desfase_monotonic=0
     logger.addHandler(handler)
     logger.propagate = False
 
+    logging.getLogger("pika").setLevel(logging.WARNING)
+
+
     return logger
