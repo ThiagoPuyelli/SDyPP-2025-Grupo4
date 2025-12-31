@@ -32,34 +32,36 @@ def conectar_rabbit():
                 )
             )
             channel = connection.channel()
-            logger.info("Conectado a RabbitMQ")
             return connection, channel
         except pika.exceptions.AMQPConnectionError as e:
             logger.warning(f"No se pudo conectar a RabbitMQ: {e}, reintentando...")
             time.sleep(5)
 
 def publish_seguro(event):
+    conn = None
+    channel = None
+
     try:
-        state.queue_channel.basic_publish(
+        conn, channel = conectar_rabbit()
+        channel.basic_publish(
             exchange="blockchain.exchange",
             routing_key="",
             body=json.dumps(event)
         )
+
     except (pika.exceptions.AMQPError, ConnectionResetError, OSError) as e:
-        logger.error(f"Error publicando en RabbitMQ: {e}, reconectando...")
+        logger.error(f"Error publicando en RabbitMQ: {e}")
+
+    finally:
         try:
-            state.rabbit_connection.close()
+            if channel is not None and channel.is_open:
+                channel.close()
+            if conn is not None and conn.is_open:
+                conn.close()
         except Exception:
             pass
 
-        state.rabbit_connection, state.queue_channel = conectar_rabbit()
 
-        # reintento
-        state.queue_channel.basic_publish(
-            exchange="blockchain.exchange",
-            routing_key="",
-            body=json.dumps(event)
-        )
 
 def get_current_phase(now) -> CoordinatorState:
     if now == None:

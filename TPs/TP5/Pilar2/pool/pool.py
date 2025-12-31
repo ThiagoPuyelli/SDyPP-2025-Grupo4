@@ -34,9 +34,6 @@ def iniciar ():
     # sincronizo el reloj con el coordinador
     sync_con_coordinador()
 
-    # creo canal para el exchange
-    state.rabbit_connection, state.queue_channel = conectar_rabbit()
-
     # ciclo principal
     while True:
         nuevo_estado = get_current_phase(state.mono_time.get_hora_actual())
