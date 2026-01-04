@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 import state
 from monotonic import mono_time
 
@@ -20,14 +20,14 @@ def get_state():
 
 @router.get("/block")
 def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
-    if (hash == '0'):
-        chain = state.blockchain.get_chain()
-        block = chain.blocks[0]
-    else:
-        block = state.blockchain.get_block(hash)
+    block = state.blockchain.get_block(hash)
     if block:
         return block
-    return {"error": "Bloque no encontrado"}, 404
+    
+    raise HTTPException(
+        status_code=404,
+        detail="Bloque no encontrado"
+    )
 
 @router.get("/")
 def root():
