@@ -12,7 +12,11 @@ def scheduler():
     global logger
 
     if state.blockchain.is_empty:
+        logger.info("Creando bloque génesis...")
         create_genesis_block()
+    else:
+        logger.info("Blockchain ya existente:")
+        logger.info(state.blockchain.get_chain())
 
     logger = setup_logger_con_monotonic(mono_time.hora_inicio, mono_time.start_monotonic)
 
