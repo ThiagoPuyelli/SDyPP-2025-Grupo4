@@ -1,74 +1,20 @@
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: coordinador-ingress
-#   namespace: blockchain
-#   annotations:
-#     kubernetes.io/ingress.class: "gce"
-# spec:
-#   rules:
-#   - http:
-#       paths:
-#       - path: /tasks
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
-#       - path: /state
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
-#       - path: /results
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
-#       - path: /block
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
-#       - path: /chain
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
-#       - path: /prefix
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
-#       - path: /docs
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
-#       - path: /openapi.json
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
-#       - path: /static
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: coordinador
-#             port:
-#               number: 8000
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pool-ingress
+  namespace: pool
+  annotations:
+    networking.gke.io/managed-certificates: "pool-cert"
+spec:
+  ingressClassName: gce
+  rules:
+  - host: pool.blockchain-sd.publicvm.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pool
+            port:
+              number: 8000

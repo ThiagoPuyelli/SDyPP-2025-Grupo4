@@ -4,68 +4,14 @@ metadata:
   name: coordinador-ingress
   namespace: blockchain
   annotations:
-    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/managed-certificates: "coordinador-cert"
 spec:
+  ingressClassName: gce
   rules:
-  - http:
+  - host: blockchain.blockchain-sd.publicvm.com
+    http:
       paths:
-      - path: /tasks
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 8000
-      - path: /state
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 8000
-      - path: /results
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 8000
-      - path: /block
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 8000
-      - path: /chain
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 8000
-      - path: /prefix
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 8000
-      - path: /docs
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 8000
-      - path: /openapi.json
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 8000
-      - path: /static
+      - path: /
         pathType: Prefix
         backend:
           service:
