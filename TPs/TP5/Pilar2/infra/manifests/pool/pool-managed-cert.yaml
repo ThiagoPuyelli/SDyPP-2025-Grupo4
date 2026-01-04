@@ -2,7 +2,7 @@ apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
   name: pool-cert
-  namespace: blockchain
+  namespace: pool
 spec:
   domains:
     - pool.blockchain-sd.publicvm.com

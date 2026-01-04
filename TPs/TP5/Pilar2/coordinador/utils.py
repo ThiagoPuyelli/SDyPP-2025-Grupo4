@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime, timezone
 import config
-from state import CoordinatorState, blockchain
+from state import CoordinatorState
 from typing import Optional
 from models import MinedBlock, MinedChain, Transaction
 import state
@@ -83,7 +83,7 @@ def get_last_interval_start(lastPhase: datetime = None) -> datetime:
     return lastPhase.replace(hour=hour, minute=minute, second=second, microsecond=0)
 
 def create_genesis_block() -> Optional[MinedBlock]:
-    if blockchain.is_empty():
+    if state.blockchain.is_empty():
 
         public_key_pem = (
             "-----BEGIN PUBLIC KEY-----\n"
@@ -126,7 +126,7 @@ def create_genesis_block() -> Optional[MinedBlock]:
         
         genesis_block.hash = hash_calculado
 
-        blockchain.append_block(genesis_block)
+        state.blockchain.append_block(genesis_block)
         return genesis_block
     return None
     
