@@ -29,10 +29,13 @@ kind: Service
 metadata:
   name: pool
   namespace: pool
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
+  type: ClusterIP
   selector:
     app: pool
   ports:
-    - port: 8000
+    - name: http
+      port: 80
       targetPort: 8000
-  type: ClusterIP
