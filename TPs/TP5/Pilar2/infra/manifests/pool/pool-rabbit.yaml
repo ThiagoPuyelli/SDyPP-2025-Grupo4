@@ -71,6 +71,7 @@ metadata:
   namespace: pool
 spec:
   type: LoadBalancer
+  loadBalancerIP: 35.229.51.211    ### ESTA IP ES GLOBAL (pool-queue-ip)
   selector:
     app: rabbitmq
   ports:
