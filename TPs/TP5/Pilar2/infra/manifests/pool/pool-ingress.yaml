@@ -4,7 +4,8 @@ metadata:
   name: pool-ingress
   namespace: pool
   annotations:
-    networking.gke.io/managed-certificates: "pool-cert"
+    kubernetes.io/ingress.global-static-ip-name: pool-ip
+    networking.gke.io/managed-certificates: pool-cert
 spec:
   ingressClassName: gce
   rules:

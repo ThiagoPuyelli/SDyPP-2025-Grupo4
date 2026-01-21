@@ -4,7 +4,8 @@ metadata:
   name: coordinador-ingress
   namespace: blockchain
   annotations:
-    networking.gke.io/managed-certificates: "coordinador-cert"
+    kubernetes.io/ingress.global-static-ip-name: coordinador-ip
+    networking.gke.io/managed-certificates: coordinador-cert
 spec:
   ingressClassName: gce
   rules:
