@@ -14,7 +14,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
 fi
 
 echo "Aplicando namespaces y cuentas de servicio..."
-kubectl apply -f "${MANIFEST_ROOT}/namespace.yaml"
+kubectl apply -f "${MANIFEST_ROOT}/namespace-coordinador.yaml"
 kubectl apply -f "${VAULT_MANIFESTS}/namespace.yaml"
 kubectl apply -f "${VAULT_MANIFESTS}/blockchain-serviceaccounts.yaml"
 
