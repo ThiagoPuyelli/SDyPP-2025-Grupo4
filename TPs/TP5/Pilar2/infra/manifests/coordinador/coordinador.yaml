@@ -97,8 +97,6 @@ kind: Service
 metadata:
   name: coordinador
   namespace: blockchain
-  annotations:
-    cloud.google.com/neg: '{"ingress": true}'
 spec:
   type: ClusterIP
   selector:

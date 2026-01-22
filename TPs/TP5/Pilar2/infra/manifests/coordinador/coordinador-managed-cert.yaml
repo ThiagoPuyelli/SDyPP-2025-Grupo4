@@ -1,8 +1,8 @@
-apiVersion: networking.gke.io/v1
-kind: ManagedCertificate
-metadata:
-  name: coordinador-cert
-  namespace: blockchain
-spec:
-  domains:
-    - blockchain.blockchain-sd.publicvm.com
+# apiVersion: networking.gke.io/v1
+# kind: ManagedCertificate
+# metadata:
+#   name: coordinador-cert
+#   namespace: blockchain
+# spec:
+#   domains:
+#     - blockchain.blockchain-sd.publicvm.com

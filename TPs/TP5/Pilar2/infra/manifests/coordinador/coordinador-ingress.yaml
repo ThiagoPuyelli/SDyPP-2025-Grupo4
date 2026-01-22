@@ -4,12 +4,22 @@ metadata:
   name: coordinador-ingress
   namespace: blockchain
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: coordinador-ip
-    networking.gke.io/managed-certificates: coordinador-cert
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  ingressClassName: gce
-  defaultBackend:
-    service:
-      name: coordinador
-      port:
-        number: 80
+  tls:
+    - hosts:
+        - blockchain.blockchain-sd.publicvm.com
+      secretName: coordinador-tls
+  rules:
+    - host: blockchain.blockchain-sd.publicvm.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: coordinador
+                port:
+                  number: 80

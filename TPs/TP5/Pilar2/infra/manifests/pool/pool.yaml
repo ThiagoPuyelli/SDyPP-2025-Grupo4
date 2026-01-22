@@ -29,8 +29,6 @@ kind: Service
 metadata:
   name: pool
   namespace: pool
-  annotations:
-    cloud.google.com/neg: '{"ingress": true}'
 spec:
   type: ClusterIP
   selector:
