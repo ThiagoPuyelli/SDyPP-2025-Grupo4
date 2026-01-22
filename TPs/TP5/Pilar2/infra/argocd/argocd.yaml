@@ -11,7 +11,7 @@ spec:
     path: TPs/TP5/Pilar2/infra/manifests
     directory:
       recurse: true
-      exclude: "{vault/**,argocd/**}"
+      exclude: "{vault/**}"
   destination:
     server: https://kubernetes.default.svc
     namespace: blockchain 

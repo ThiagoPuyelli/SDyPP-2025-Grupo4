@@ -20,7 +20,7 @@ kubectl apply -f "${VAULT_MANIFESTS}/blockchain-serviceaccounts.yaml"
 
 echo "Desplegando Vault..."
 kubectl apply -f "${VAULT_MANIFESTS}/vault.yaml"
-kubectl -n secret rollout status deploy/vault --timeout=120s
+kubectl -n secret rollout status deploy/vault --timeout=300s
 
 echo "Publicando variables del .env como Secret temporal..."
 kubectl -n secret create secret generic vault-env \
@@ -30,7 +30,7 @@ kubectl -n secret create secret generic vault-env \
 echo "Ejecutando bootstrap para cargar secretos y roles..."
 kubectl -n secret delete job vault-bootstrap --ignore-not-found
 kubectl apply -f "${VAULT_MANIFESTS}/bootstrap-job.yaml"
-kubectl -n secret wait --for=condition=complete job/vault-bootstrap --timeout=120s
+kubectl -n secret wait --for=condition=complete job/vault-bootstrap --timeout=300s
 
 echo "Vault desplegado y secretos cargados en secret/data/blockchain."
 echo "Ahora podés aplicar el resto de los manifiestos con:"
