@@ -4,12 +4,9 @@ resource "kubernetes_namespace" "ingress_nginx" {
     }
 }
 
-data "terraform_remote_state" "ips" {
-  backend = "gcs"
-  config = {
-    bucket = "terraform-state"
-    prefix = "k8s-ips"
-  }
+variable "nginx_ip" {
+    type        = string
+    description = "IP estática del ingress nginx"
 }
 
 resource "helm_release" "nginx_ingress" {
@@ -30,7 +27,7 @@ resource "helm_release" "nginx_ingress" {
 
     set {
         name  = "controller.service.loadBalancerIP"
-        value = data.terraform_remote_state.ips.outputs.nginx_ip
+        value = var.nginx_ip
     }
 
     # Opcional pero recomendado en GKE

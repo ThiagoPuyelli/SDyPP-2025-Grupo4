@@ -4,31 +4,9 @@ metadata:
   name: pool-ingress
   namespace: pool
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: pool-ip
-    networking.gke.io/managed-certificates: pool-cert
-spec:
-  ingressClassName: gce
-  rules:
-  - host: pool.blockchain-sd.publicvm.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: pool
-            port:
-              number: 80
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: pool-ingress
-  namespace: pool
-  annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   tls:
     - hosts:
