@@ -8,14 +8,8 @@ metadata:
     networking.gke.io/managed-certificates: coordinador-cert
 spec:
   ingressClassName: gce
-  rules:
-  - host: blockchain.blockchain-sd.publicvm.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: coordinador
-            port:
-              number: 80
+  defaultBackend:
+    service:
+      name: coordinador
+      port:
+        number: 80
