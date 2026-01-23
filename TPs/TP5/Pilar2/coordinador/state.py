@@ -5,6 +5,9 @@ from services.database_service import RedisBlockchainDatabase, RedisReceivedChai
 from services.queue_service import RabbitTransactionQueue
 import os
 import redis
+from redis.retry import Retry
+from redis.backoff import ExponentialBackoff
+from redis.exceptions import ConnectionError
 
 class CoordinatorState(str, Enum):
     UNSET = "server starting, only accepting transactions to queue"
@@ -22,6 +25,8 @@ redis_client = redis.Redis(
     db=int(get_secret("REDIS_DB", "0")),
     password=os.getenv("REDIS_PASSWORD"),
     decode_responses=True,
+    retry_on_error=[ConnectionError],
+    retry=Retry(ExponentialBackoff(), retries=10)
 )
 
 pending_transactions = RabbitTransactionQueue(

@@ -65,6 +65,17 @@ spec:
               EOF
 
               vault agent -config=/vault/config/agent.hcl -log-level=info
+        - name: wait-for-redis
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Esperando Redis..."
+              until nc -z redis 6379; do
+                sleep 2
+              done
+              echo "Redis disponible"
       containers:
         - name: coordinador
           image: matiasherrneder/blockchain-coordinador:eb7d3e8
