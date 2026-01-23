@@ -10,10 +10,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - pool.blockchain-sd.publicvm.com
+        - pool.34.23.224.114.nip.io
       secretName: pool-tls
   rules:
-    - host: pool.blockchain-sd.publicvm.com
+    - host: pool.34.23.224.114.nip.io
       http:
         paths:
           - path: /

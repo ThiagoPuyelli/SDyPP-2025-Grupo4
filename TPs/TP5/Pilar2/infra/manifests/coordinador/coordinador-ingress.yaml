@@ -10,10 +10,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - blockchain.blockchain-sd.publicvm.com
+        - blockchain.34.23.224.114.nip.io
       secretName: coordinador-tls
   rules:
-    - host: blockchain.blockchain-sd.publicvm.com
+    - host: blockchain.34.23.224.114.nip.io
       http:
         paths:
           - path: /
