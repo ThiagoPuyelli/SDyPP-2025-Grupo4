@@ -1,116 +1,116 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: rabbitmq
-  namespace: blockchain
-spec:
-  clusterIP: None  # Necesario para StatefulSet
-  selector:
-    app: rabbitmq
-  ports:
-    - port: 5672
-      name: amqp
-    - port: 15672
-      name: http
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: rabbitmq
+#   namespace: blockchain
+# spec:
+#   clusterIP: None  # Necesario para StatefulSet
+#   selector:
+#     app: rabbitmq
+#   ports:
+#     - port: 5672
+#       name: amqp
+#     - port: 15672
+#       name: http
 
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: rabbitmq
-  namespace: blockchain
-spec:
-  serviceName: rabbitmq
-  replicas: 1
-  selector:
-    matchLabels:
-      app: rabbitmq
-  template:
-    metadata:
-      labels:
-        app: rabbitmq
-    spec:
-      serviceAccountName: rabbitmq-sa
-      nodeSelector:
-        cloud.google.com/gke-nodepool: infraestructura
-      initContainers:
-        - name: vault-agent-init
-          image: hashicorp/vault:1.15.4
-          env:
-            - name: VAULT_ADDR
-              value: http://vault.secret.svc:8200
-          volumeMounts:
-            - name: vault-config
-              mountPath: /vault/config
-            - name: vault-secrets
-              mountPath: /vault/secrets
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -eu
-              cat > /vault/config/agent.hcl <<'EOF'
-              exit_after_auth = true
-              pid_file = "/tmp/vault-agent.pid"
+# ---
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: rabbitmq
+#   namespace: blockchain
+# spec:
+#   serviceName: rabbitmq
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: rabbitmq
+#   template:
+#     metadata:
+#       labels:
+#         app: rabbitmq
+#     spec:
+#       serviceAccountName: rabbitmq-sa
+#       nodeSelector:
+#         cloud.google.com/gke-nodepool: infraestructura
+#       initContainers:
+#         - name: vault-agent-init
+#           image: hashicorp/vault:1.15.4
+#           env:
+#             - name: VAULT_ADDR
+#               value: http://vault.secret.svc:8200
+#           volumeMounts:
+#             - name: vault-config
+#               mountPath: /vault/config
+#             - name: vault-secrets
+#               mountPath: /vault/secrets
+#           command:
+#             - /bin/sh
+#             - -c
+#             - |
+#               set -eu
+#               cat > /vault/config/agent.hcl <<'EOF'
+#               exit_after_auth = true
+#               pid_file = "/tmp/vault-agent.pid"
 
-              auto_auth {
-                method "kubernetes" {
-                  mount_path = "auth/kubernetes"
-                  config = {
-                    role = "blockchain-role"
-                  }
-                }
-                sink "file" {
-                  config = {
-                    path = "/vault/secrets/.token"
-                  }
-                }
-              }
+#               auto_auth {
+#                 method "kubernetes" {
+#                   mount_path = "auth/kubernetes"
+#                   config = {
+#                     role = "blockchain-role"
+#                   }
+#                 }
+#                 sink "file" {
+#                   config = {
+#                     path = "/vault/secrets/.token"
+#                   }
+#                 }
+#               }
 
-              template {
-                destination = "/vault/secrets/RABBIT_PASS"
-                contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.RABBIT_PASS }}{{- end }}"
-              }
+#               template {
+#                 destination = "/vault/secrets/RABBIT_PASS"
+#                 contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.RABBIT_PASS }}{{- end }}"
+#               }
 
-              template {
-                destination = "/vault/secrets/RABBIT_USER"
-                contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.RABBIT_USER }}{{- end }}"
-              }
-              EOF
+#               template {
+#                 destination = "/vault/secrets/RABBIT_USER"
+#                 contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.RABBIT_USER }}{{- end }}"
+#               }
+#               EOF
 
-              vault agent -config=/vault/config/agent.hcl -log-level=info
-      containers:
-        - name: rabbitmq
-          image: rabbitmq:3-management
-          ports:
-            - containerPort: 5672
-              name: amqp
-            - containerPort: 15672
-              name: http
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -eu
-              export RABBITMQ_DEFAULT_USER="$(cat /vault/secrets/RABBIT_USER)"
-              export RABBITMQ_DEFAULT_PASS="$(cat /vault/secrets/RABBIT_PASS)"
-              exec docker-entrypoint.sh rabbitmq-server
-          volumeMounts:
-            - name: rabbitmq-data
-              mountPath: /var/lib/rabbitmq
-            - name: vault-secrets
-              mountPath: /vault/secrets
-              readOnly: true
-      volumes:
-        - name: vault-config
-          emptyDir: {}
-        - name: vault-secrets
-          emptyDir: {}
-  volumeClaimTemplates:
-    - metadata:
-        name: rabbitmq-data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 1Gi
+#               vault agent -config=/vault/config/agent.hcl -log-level=info
+#       containers:
+#         - name: rabbitmq
+#           image: rabbitmq:3-management
+#           ports:
+#             - containerPort: 5672
+#               name: amqp
+#             - containerPort: 15672
+#               name: http
+#           command:
+#             - /bin/sh
+#             - -c
+#             - |
+#               set -eu
+#               export RABBITMQ_DEFAULT_USER="$(cat /vault/secrets/RABBIT_USER)"
+#               export RABBITMQ_DEFAULT_PASS="$(cat /vault/secrets/RABBIT_PASS)"
+#               exec docker-entrypoint.sh rabbitmq-server
+#           volumeMounts:
+#             - name: rabbitmq-data
+#               mountPath: /var/lib/rabbitmq
+#             - name: vault-secrets
+#               mountPath: /vault/secrets
+#               readOnly: true
+#       volumes:
+#         - name: vault-config
+#           emptyDir: {}
+#         - name: vault-secrets
+#           emptyDir: {}
+#   volumeClaimTemplates:
+#     - metadata:
+#         name: rabbitmq-data
+#       spec:
+#         accessModes: ["ReadWriteOnce"]
+#         resources:
+#           requests:
+#             storage: 1Gi
