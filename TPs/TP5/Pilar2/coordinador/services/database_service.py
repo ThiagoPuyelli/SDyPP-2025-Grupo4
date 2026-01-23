@@ -39,6 +39,11 @@ class BlockchainDatabase(ABC):
         """Devuelve un bloque por su hash, o None si no existe"""
         pass
 
+    @abstractmethod
+    def get_genesis(self) -> Union[MinedBlock, None]:
+        """Devuelve el bloque génesis de la cadena"""
+        pass
+
 class ReceivedChainsDatabase(ABC):
     @abstractmethod
     def add_chain(self, chain: MinedChain) -> None:
@@ -175,6 +180,10 @@ class RedisBlockchainDatabase(BlockchainDatabase):
 
     def get_block(self, block_hash: str) -> Union[MinedBlock, None]:
         raw = self.r.get(f"blockchain:block:{block_hash}")
+        return MinedBlock.model_validate(json.loads(raw)) if raw else None
+    
+    def get_genesis(self) -> Union[MinedBlock, None]:
+        raw = self.r.lindex(self.key_chain, 0)
         return MinedBlock.model_validate(json.loads(raw)) if raw else None
     
 class RedisReceivedChainsDatabase(ReceivedChainsDatabase):

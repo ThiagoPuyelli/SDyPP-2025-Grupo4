@@ -1,3 +1,4 @@
+from itertools import chain
 from fastapi import APIRouter, Query, HTTPException
 import state
 from monotonic import mono_time
@@ -20,7 +21,10 @@ def get_state():
 
 @router.get("/block")
 def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
-    block = state.blockchain.get_block(hash)
+    if (hash == '0'):
+        block = state.blockchain.get_genesis()
+    else:
+        block = state.blockchain.get_block(hash)
     if block:
         return block
     
