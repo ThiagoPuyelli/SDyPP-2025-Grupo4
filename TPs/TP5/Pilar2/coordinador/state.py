@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 from services.secret_service import get_secret
-from services.database_service import RedisBlockchainDatabase, RedisReceivedChainsDatabase, RedisActiveTransactions
+from services.database_service import RedisBlockchainDatabase, RedisReceivedChainsDatabase, RedisTransactions
 from services.queue_service import RabbitTransactionQueue
 import os
 import redis
@@ -29,13 +29,15 @@ redis_client = redis.Redis(
     retry=Retry(ExponentialBackoff(), retries=10)
 )
 
-pending_transactions = RabbitTransactionQueue(
-    queue_name="pending_transactions",
-    host=os.getenv("RABBIT_HOST", "localhost"),
-    port=int(os.getenv("RABBIT_PORT", 5672)),
-    user=get_secret("RABBIT_USER", "user"),
-    password=get_secret("RABBIT_PASS", "pass")
-)
-active_transactions = RedisActiveTransactions(redis_client)
+# pending_transactions = RabbitTransactionQueue(
+#     queue_name="pending_transactions",
+#     host=os.getenv("RABBIT_HOST", "localhost"),
+#     port=int(os.getenv("RABBIT_PORT", 5672)),
+#     user=get_secret("RABBIT_USER", "user"),
+#     password=get_secret("RABBIT_PASS", "pass")
+# )
+
+pending_transactions = RedisTransactions(redis_client)
+active_transactions = RedisTransactions(redis_client)
 blockchain = RedisBlockchainDatabase(redis_client)
 received_chains = RedisReceivedChainsDatabase(redis_client)
