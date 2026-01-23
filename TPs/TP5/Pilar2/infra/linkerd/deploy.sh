@@ -38,5 +38,5 @@ done
 # 2) Labelar namespaces
 # -------------------------
 for ns in blockchain pool; do
-  kubectl label namespace $ns linkerd.io/inject=enabled --overwrite
+  kubectl annotate namespace $ns linkerd.io/inject=enabled --overwrite
 done
