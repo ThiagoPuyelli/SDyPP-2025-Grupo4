@@ -3,6 +3,9 @@ set -euo pipefail
 
 echo "Deploy completo del cluster..."
 
+echo "|----- Deploying Linkerd..."
+./linkerd/deploy.sh
+
 echo "|----- Deploying Vault..."
 ./vault/deploy.sh
 
