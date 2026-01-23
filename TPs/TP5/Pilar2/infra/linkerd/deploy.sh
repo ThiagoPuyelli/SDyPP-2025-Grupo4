@@ -30,17 +30,13 @@ fi
 # -------------------------
 # 1) Crear namespaces
 # -------------------------
-for ns in blockchain pool observability argocd secret ingress-nginx; do
+for ns in blockchain pool; do
   kubectl create namespace $ns --dry-run=client -o yaml | kubectl apply -f -
 done
 
 # -------------------------
 # 2) Labelar namespaces
 # -------------------------
-for ns in blockchain pool observability argocd secret ingress-nginx; do
+for ns in blockchain pool; do
   kubectl label namespace $ns linkerd.io/inject=enabled --overwrite
 done
-
-# Reiniciar ingress-nginx para que se inyecte el proxy
-echo "Rolleando ingress para que use TLS..."
-kubectl rollout restart deployment ingress-nginx-controller -n ingress-nginx

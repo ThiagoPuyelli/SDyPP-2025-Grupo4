@@ -12,8 +12,6 @@ spec:
     metadata:
       labels:
         app: coordinador
-      annotations:
-        linkerd.io/inject: enabled
     spec:
       serviceAccountName: coordinador-sa
       initContainers:
