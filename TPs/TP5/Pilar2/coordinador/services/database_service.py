@@ -204,7 +204,7 @@ class RedisReceivedChainsDatabase(ReceivedChainsDatabase):
         return len(self.r.keys(f"{self.key_prefix}*")) == 0
     
 class RedisTransactions(ActiveTransactionsModel):
-    def __init__(self, redis_client: redis.Redis, key: str = "active_transactions"):
+    def __init__(self, redis_client: redis.Redis, key: str):
         self.r = redis_client
         self.key = key
 

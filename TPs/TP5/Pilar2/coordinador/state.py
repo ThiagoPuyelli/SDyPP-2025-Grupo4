@@ -37,7 +37,7 @@ redis_client = redis.Redis(
 #     password=get_secret("RABBIT_PASS", "pass")
 # )
 
-pending_transactions = RedisTransactions(redis_client)
-active_transactions = RedisTransactions(redis_client)
+pending_transactions = RedisTransactions(redis_client, key="pending_transactions")
+active_transactions = RedisTransactions(redis_client, key="active_transactions")
 blockchain = RedisBlockchainDatabase(redis_client)
 received_chains = RedisReceivedChainsDatabase(redis_client)
