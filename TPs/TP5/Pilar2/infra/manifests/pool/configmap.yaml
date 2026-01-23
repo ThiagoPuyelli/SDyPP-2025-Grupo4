@@ -4,7 +4,7 @@ metadata:
   name: pool-config
   namespace: pool
 data:
-  HOST_URI: "http://coordinador.blockchain:8000"
+  HOST_URI: "http://coordinador.blockchain"
   RABBIT_HOST: "rabbitmq.pool"
   PROCESSING_TIER: "1"
   REDIS_HOST: redis
