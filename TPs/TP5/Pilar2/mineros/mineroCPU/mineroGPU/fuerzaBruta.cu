@@ -145,52 +145,64 @@ __device__ void md5_multiblock(const uint8_t *msg, int len, uint8_t *out) {
 /* ================= KERNEL ================= */
 
 __global__ void kernel(uint64_t start, uint64_t end) {
-    uint64_t idx = start + blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx > end) return;
-    if (atomicAdd(&d_found, 0)) return;
 
-    char buffer[MAX_MESSAGE_LEN];
+    uint64_t stride = (uint64_t)blockDim.x * gridDim.x;
 
-    int len = d_base_len;
-    if (len + 20 >= MAX_MESSAGE_LEN) return;  // safety
+    for (
+        uint64_t idx = start + blockIdx.x * blockDim.x + threadIdx.x;
+        idx <= end;
+        idx += stride
+    ) {
 
-    memcpy(buffer, d_base, len);
+        if (atomicAdd(&d_found, 0)) return;
 
-    uint64_t n = idx;
-    char tmp[32];
-    int t = 0;
-    do {
-        tmp[t++] = '0' + (n % 10);
-        n /= 10;
-    } while (n);
+        char buffer[MAX_MESSAGE_LEN];
 
-    for (int i = 0; i < t; i++) {
-        buffer[len + i] = tmp[t - 1 - i];
-    }
+        int len = d_base_len;
+        if (len + 20 >= MAX_MESSAGE_LEN) return;
 
-    int total_len = len + t;
+        memcpy(buffer, d_base, len);
 
-    uint8_t digest[16];
-    md5_multiblock((uint8_t *)buffer, total_len, digest);
+        uint64_t n = idx;
+        char tmp[32];
+        int t = 0;
+        do {
+            tmp[t++] = '0' + (n % 10);
+            n /= 10;
+        } while (n);
 
-    const char *hex = "0123456789abcdef";
-    char hexhash[33];
-    for (int i = 0; i < 16; i++) {
-        hexhash[i * 2]     = hex[digest[i] >> 4];
-        hexhash[i * 2 + 1] = hex[digest[i] & 0xF];
-    }
-    hexhash[32] = 0;
-
-    for (int i = 0; i < d_prefix_len; i++) {
-        if (hexhash[i] != d_prefix[i]) return;
-    }
-
-    if (atomicCAS(&d_found, 0, 1) == 0) {
-        d_found_nonce = idx;
-        for (int i = 0; i < 33; i++) {
-            d_found_hash[i] = hexhash[i];
+        for (int i = 0; i < t; i++) {
+            buffer[len + i] = tmp[t - 1 - i];
         }
-        __threadfence();  // 🔥 CLAVE
+
+        int total_len = len + t;
+
+        uint8_t digest[16];
+        md5_multiblock((uint8_t *)buffer, total_len, digest);
+
+        const char *hex = "0123456789abcdef";
+        char hexhash[33];
+        for (int i = 0; i < 16; i++) {
+            hexhash[i * 2]     = hex[digest[i] >> 4];
+            hexhash[i * 2 + 1] = hex[digest[i] & 0xF];
+        }
+        hexhash[32] = 0;
+
+        for (int i = 0; i < d_prefix_len; i++) {
+            if (hexhash[i] != d_prefix[i]) goto next;
+        }
+
+        if (atomicCAS(&d_found, 0, 1) == 0) {
+            d_found_nonce = idx;
+            for (int i = 0; i < 33; i++) {
+                d_found_hash[i] = hexhash[i];
+            }
+            __threadfence();
+        }
+        return;
+
+    next:
+        ;
     }
 }
 
