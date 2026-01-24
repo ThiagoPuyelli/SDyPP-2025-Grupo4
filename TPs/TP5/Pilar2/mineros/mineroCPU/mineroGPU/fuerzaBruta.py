@@ -1,50 +1,65 @@
 import subprocess
 import json
 from log_config import logger
+import base64
 
+def conseguirHash(hash_objetivo, cadena, minimo, maximo, stop):
+    """
+    Ejecuta el binario CUDA ya compilado para buscar un nonce válido.
+    Devuelve (nonce, hash) o (None, None)
+    """
 
-def conseguirHash(hash, cadena, min, max, stop):
-    file_path= 'json_output.txt'
-    with open(file_path, 'w') as archivo:
-        json.dump({"numero": 0, "hash_md5_result": ""}, archivo)
-
-    # Comando para compilar el archivo CUDA
-    compile_command = ['nvcc', 'mineroGPU/fuerzaBruta.cu', '-o', 'mineroGPU/f']
-
-    # Ejecutar el comando de compilación
-    compile_process = subprocess.run(compile_command, capture_output=True, text=True)
-    # Verificar si la compilación fue exitosa
-    if compile_process.returncode != 0:
-        logger.info("Error al compilar el archivo CUDA:")
-        logger.info(compile_process.stderr)
-        return None, None
-    
-    rango = 1000000
-    minActual = min
-    maxActual = minActual + rango
+    rango = 100_000_000
+    min_actual = minimo
     encontrado = False
-    resultado = None
-    
-    while minActual < max and not stop.is_set() and not encontrado:
-        logger.info(f"MIN ACTUAL, MAX, HASH, CADENA: {minActual} {max} {hash} {cadena}")
-        execute_command = ['./mineroGPU/f', hash, cadena, str(minActual), str(maxActual)]
-        
-        execute_process = subprocess.run(execute_command, capture_output=True, text=True)
-        
-        with open(file_path, 'r') as archivo:
-            contenido = archivo.read()
-        
-        
-        resultado = json.loads(contenido)
-        
-        if not(resultado['hash_md5_result'] == ""):
+    resultado_nonce = None
+    resultado_hash = None
+
+    while min_actual <= maximo and not stop.is_set() and not encontrado:
+        max_actual = min(min_actual + rango - 1, maximo)
+
+        # logger.info(
+        #     f"GPU search | min={min_actual} max={max_actual} "
+        #     f"hash={hash_objetivo} cadena={cadena}"
+        # )
+
+        cadena_b64 = base64.b64encode(cadena.encode()).decode()
+
+        comando = [
+            "./mineroGPU/fuerzaBruta",
+            hash_objetivo,
+            cadena_b64,
+            str(min_actual),
+            str(max_actual),
+        ]
+        # logger.info(f"Ejecutando comando: {' '.join(comando)}")
+        proceso = subprocess.run(
+            comando,
+            capture_output=True,
+            text=True,
+        )
+
+        if proceso.returncode != 0:
+            logger.error("Error ejecutando fuerzaBruta (CUDA)")
+            logger.error(proceso.stderr)
+            return None, None
+
+        try:
+            salida = json.loads(proceso.stdout)
+            logger.debug(f"Salida CUDA: {salida}")
+        except json.JSONDecodeError:
+            logger.error("Salida CUDA inválida:")
+            logger.error(proceso.stdout)
+            return None, None
+
+        if salida.get("found"):
             encontrado = True
+            resultado_nonce = salida.get("nonce")
+            resultado_hash = salida.get("hash")
         else:
-            minActual = maxActual + 1
-            siguienteMax = minActual + rango
-            maxActual = max if siguienteMax > max else siguienteMax
-    
+            min_actual = max_actual + 1
+
     if encontrado:
-        return resultado['numero'], resultado['hash_md5_result']
-    else:
-        return None, None 
+        return resultado_nonce, resultado_hash
+
+    return None, None
