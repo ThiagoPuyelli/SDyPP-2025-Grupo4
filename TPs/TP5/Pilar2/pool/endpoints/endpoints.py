@@ -39,6 +39,7 @@ async def submit_result(chain: MinedChain, miner_pk: str = Query(..., descriptio
     is_share = False
 
     if not chain.blocks:
+        logger.info("HTTP 400 - Empty chain")
         raise HTTPException(
             status_code=400,
             detail="Empty chain"
@@ -47,12 +48,14 @@ async def submit_result(chain: MinedChain, miner_pk: str = Query(..., descriptio
     block = chain.blocks[0]
 
     if block.miner_id != config.POOL_ID:
+        logger.info("HTTP 400 - Miner ID does not match this pool's ID")
         raise HTTPException(
             status_code=400,
             detail="Miner ID does not match this pool's ID"
         )
     
     if block.previous_hash != state.previous_hash:
+        logger.info("HTTP 400 - Block does not chain")
         raise HTTPException(
             status_code=400,
             detail="Block does not chain"
@@ -62,6 +65,7 @@ async def submit_result(chain: MinedChain, miner_pk: str = Query(..., descriptio
     if not is_valid_hash(block, state.prefix):
         # valido si es un share
         if len(state.prefix) <= 1 or not is_valid_hash(block, state.prefix[:-1]):
+            logger.info("HTTP 400 - Block is invalid")
             raise HTTPException(
                 status_code=400,
                 detail=f"Block is invalid"
@@ -70,12 +74,14 @@ async def submit_result(chain: MinedChain, miner_pk: str = Query(..., descriptio
             is_share = True
 
     if not state.queue_channel:
+        logger.info("HTTP 400 - Pool not yet initialized")
         raise HTTPException(
             status_code=400,
             detail="Pool not yet initialized"
         )
 
     if not verify_tx_signature(block.transaction):
+        logger.info("HTTP 400 - Invalid transaction signature")
         raise HTTPException(
             status_code=400,
             detail="Invalid transaction signature"
@@ -87,6 +93,7 @@ async def submit_result(chain: MinedChain, miner_pk: str = Query(..., descriptio
         if tx_signature(t.transaction) == sig:
             
             if t.mined:
+                logger.info("HTTP 400 - Transaction already mined")
                 raise HTTPException(
                     status_code=400,
                     detail="Transaction already mined"
@@ -111,7 +118,7 @@ async def submit_result(chain: MinedChain, miner_pk: str = Query(..., descriptio
                 logger.info(f"Workload recibida: {block}")
             
             return {"status": "received"}
-        
+    logger.info("HTTP 400 - Transaction not in available tasks")
     raise HTTPException(
         status_code=400,
         detail="Transaction not in available tasks"
