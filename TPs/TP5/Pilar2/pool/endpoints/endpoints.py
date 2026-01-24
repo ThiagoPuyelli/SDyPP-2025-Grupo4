@@ -73,12 +73,12 @@ async def submit_result(chain: MinedChain, miner_pk: str = Query(..., descriptio
         else: # (es un share)
             is_share = True
 
-    if not state.queue_channel:
-        logger.info("HTTP 400 - Pool not yet initialized")
-        raise HTTPException(
-            status_code=400,
-            detail="Pool not yet initialized"
-        )
+    # if not state.queue_channel:
+    #     logger.info("HTTP 400 - Pool not yet initialized")
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail="Pool not yet initialized"
+    #     )
 
     if not verify_tx_signature(block.transaction):
         logger.info("HTTP 400 - Invalid transaction signature")
