@@ -22,13 +22,13 @@ async def get_transaction():
             detail="No hay tareas disponibles para minar"
         )
     
-    state.nonce_start += 1000000000
+    state.nonce_start += config.NONCE_MINER_RANGE
     
     return {
         "previous_hash": state.previous_hash,
         "transaction": [tarea],
         "target_prefix": state.prefix,
-        "nonce_start": state.nonce_start - 1000000000,
+        "nonce_start": state.nonce_start - config.NONCE_MINER_RANGE,
         "nonce_end": state.nonce_start
     }
 
