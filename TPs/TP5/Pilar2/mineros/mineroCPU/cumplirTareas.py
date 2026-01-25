@@ -4,6 +4,7 @@ from log_config import logger
 import config
 import time
 from models import MinedBlock
+from utils import calcular_md5
 
 def minar(data, detener_mineria):
     pk_minado = state.pool_id if state.pool_id else config.MINER_ID
@@ -20,9 +21,12 @@ def minar(data, detener_mineria):
             end = time.perf_counter()
             logger.info(f"TIEMPO TOTAL DE MINADO: {end - start:.2f} segundos")
             return
+        hash_transaccion = calcular_md5(f"{t['source']} {t['target']} {t['amount']} {t['timestamp']} {t['sign']}")
+        hash_pk_minero = calcular_md5(pk_minado)
         numero_encontrado, hash_resultado = conseguirHash(
             prefix, 
-            f"{previousHash} {t['source']} {t['target']} {t['amount']} {t['timestamp']} {t['sign']} {pk_minado}", 
+            # f"{previousHash} {t['source']} {t['target']} {t['amount']} {t['timestamp']} {t['sign']} {pk_minado}",
+            f"{previousHash} {hash_transaccion} {hash_pk_minero}",
             nonce_start if nonce_start is not None else 0, 
             nonce_end if nonce_end is not None else 1000000000000000000, #1000000000,
             detener_mineria)

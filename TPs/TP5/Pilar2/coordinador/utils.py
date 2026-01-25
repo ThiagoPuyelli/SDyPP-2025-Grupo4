@@ -18,7 +18,10 @@ def calcular_md5(texto):
 
 def is_valid_hash(block, prefix):
     t = block.transaction
-    cadena_base = f"{block.previous_hash} {t.source} {t.target} {t.amount} {t.timestamp} {t.sign} {block.miner_id}"
+    # cadena_base = f"{block.previous_hash} {t.source} {t.target} {t.amount} {t.timestamp} {t.sign} {block.miner_id}"
+    hash_transaccion = calcular_md5(f"{t.source} {t.target} {t.amount} {t.timestamp} {t.sign}")
+    hash_pk_minero = calcular_md5(block.miner_id)
+    cadena_base = f"{block.previous_hash} {hash_transaccion} {hash_pk_minero}"
     cadena_completa = cadena_base + str(block.nonce)
     hash_calculado = calcular_md5(cadena_completa)
     

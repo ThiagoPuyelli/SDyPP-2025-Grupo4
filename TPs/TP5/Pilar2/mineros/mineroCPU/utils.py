@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import hashlib
 import time
 import requests
 from monotonic import MonotonicTime
@@ -6,6 +7,11 @@ from log_config import setup_logger_con_monotonic
 import state
 from state import CoordinatorState
 import config
+
+def calcular_md5(texto):
+    hash_md5 = hashlib.md5()
+    hash_md5.update(texto.encode('utf-8'))
+    return hash_md5.hexdigest()
 
 def get_current_phase(now) -> CoordinatorState:
     if now == None:
