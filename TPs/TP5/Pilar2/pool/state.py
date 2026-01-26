@@ -1,9 +1,8 @@
 from enum import Enum
 from models import MinedChain
-from services.subscribers import LocalSubscribers
-from typing import Dict
+from services.subscribers import RedisSubscribers
 from fastapi import WebSocket
-from prize_handler import PrizeHandler, MinadasRepository
+from prize_handler import PrizeHandler
 import os
 import redis
 
@@ -18,8 +17,6 @@ mined_blocks = MinedChain(blocks=[])
 mono_time = None
 
 cant_transacciones_a_minar = 0
-
-mineros_activos = LocalSubscribers()
 
 queue_channel = None
 rabbit_connection = None
@@ -39,5 +36,7 @@ redis_client = redis.Redis(
     password=os.getenv("REDIS_PASSWORD"),
     decode_responses=True,
 )
+
+mineros_activos = RedisSubscribers(redis_client)
 
 prize_handler = PrizeHandler(redis_client)
