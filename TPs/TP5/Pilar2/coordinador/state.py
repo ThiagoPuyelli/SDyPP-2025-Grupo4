@@ -8,7 +8,7 @@ import redis
 from redis.retry import Retry
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import ConnectionError
-from services.persistant_state_service import RedisPersistentState
+from services.persistent_state_service import RedisPersistentState
 
 class CoordinatorState(str, Enum):
     UNSET = "server starting, only accepting transactions to queue"
