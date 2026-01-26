@@ -50,6 +50,7 @@ def start_rabbitmq_consumer():
             )
 
             logger.info("Consumidor RabbitMQ iniciado")
+            frenar_minado_pool(None, None, None, None)  # Manejar minado inicial al iniciar el consumidor
             channel.start_consuming()
 
         except pika.exceptions.AMQPError as e:
@@ -202,8 +203,6 @@ def frenar_minado_pool(ch, method, properties, body):
     
 def handle_frenar_minado():
     global mining_thread
-
-    logger.info("Evento recibido desde pool - interrumpiendo minado")
 
     with mining_lock:
         if mining_thread and mining_thread.is_alive():
