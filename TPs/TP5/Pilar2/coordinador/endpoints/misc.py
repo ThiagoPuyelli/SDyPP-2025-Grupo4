@@ -16,7 +16,7 @@ def get_state():
         "state": state.cicle_state.name,
         "description": state.cicle_state.value,
         "server-date-time": mono_time.get_hora_actual(),
-        "target-prefix": state.current_target_prefix,
+        "target-prefix": state.persistent_state.get_prefix(),
     }
 
 @router.get("/block")

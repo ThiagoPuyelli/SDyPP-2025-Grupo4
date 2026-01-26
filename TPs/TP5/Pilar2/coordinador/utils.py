@@ -44,16 +44,17 @@ def adjust_difficulty(best_chain: MinedChain):
         no_minadas = (ct - len(best_chain.blocks)) / ct
     
     logger.info(f"Porcentaje de transacciones minadas este ciclo: {1-no_minadas}")
-    next_target_prefix = state.current_target_prefix
-    if no_minadas > 0.8 and len(state.current_target_prefix) > 1:
-        next_target_prefix = ajustar_ceros(state.current_target_prefix, -1)
-        logger.info(f"Ajustando dificultad: {state.current_target_prefix} -> {next_target_prefix}")
+    current_target_prefix = state.persistent_state.get_prefix()
+    next_target_prefix = current_target_prefix
+    if no_minadas > 0.8 and len(current_target_prefix) > 1:
+        next_target_prefix = ajustar_ceros(current_target_prefix, -1)
+        logger.info(f"Ajustando dificultad: {current_target_prefix} -> {next_target_prefix}")
     elif no_minadas < 0.2:
-        next_target_prefix = ajustar_ceros(state.current_target_prefix, 1)
-        logger.info(f"Ajustando dificultad: {state.current_target_prefix} -> {next_target_prefix}")
+        next_target_prefix = ajustar_ceros(current_target_prefix, 1)
+        logger.info(f"Ajustando dificultad: {current_target_prefix} -> {next_target_prefix}")
     else:
-        logger.info(f"Dificultad se mantiene: {state.current_target_prefix}")
-    state.current_target_prefix = next_target_prefix
+        logger.info(f"Dificultad se mantiene: {current_target_prefix}")
+    state.persistent_state.set_prefix(next_target_prefix)
 
 def ajustar_ceros(cadena, cantidad):
     if cantidad > 0:

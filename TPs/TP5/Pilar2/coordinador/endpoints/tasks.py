@@ -54,5 +54,5 @@ async def get_task():
     return {
         "previous_hash": state.blockchain.get_last_block().hash,
         "transaction": state.active_transactions.peek_all(),
-        "target_prefix": state.current_target_prefix,
+        "target_prefix": state.persistent_state.get_prefix(),
     }

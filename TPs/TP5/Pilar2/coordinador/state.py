@@ -8,14 +8,13 @@ import redis
 from redis.retry import Retry
 from redis.backoff import ExponentialBackoff
 from redis.exceptions import ConnectionError
+from services.persistant_state_service import RedisPersistentState
 
 class CoordinatorState(str, Enum):
     UNSET = "server starting, only accepting transactions to queue"
     GIVING_TASKS = "expecting miners to request tasks"
     OPEN_TO_RESULTS = "accepting results from miners"
     SELECTING_WINNER = "selecting winner and rewarding"
-
-current_target_prefix = "0000"
 
 cicle_state = CoordinatorState.UNSET
 
@@ -41,3 +40,4 @@ pending_transactions = RedisTransactions(redis_client, key="pending_transactions
 active_transactions = RedisTransactions(redis_client, key="active_transactions")
 blockchain = RedisBlockchainDatabase(redis_client)
 received_chains = RedisReceivedChainsDatabase(redis_client)
+persistent_state = RedisPersistentState(redis_client)

@@ -34,7 +34,7 @@ async def submit_result(chain: MinedChain):
             )
         
         for i, block in enumerate(blocks):
-            if not is_valid_hash(block, state.current_target_prefix):
+            if not is_valid_hash(block, state.persistent_state.get_prefix()):
                 record_result("reject_invalid_hash")
                 raise HTTPException(
                     status_code=400,

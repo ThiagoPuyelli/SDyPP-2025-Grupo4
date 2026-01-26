@@ -22,6 +22,8 @@ def scheduler():
 
     state.cicle_state = get_starting_phase(mono_time.get_hora_actual())
 
+    state.persistent_state.init_prefix("0000")
+
     # borro bajo ciertas condiciones las received_chains al iniciar el servidor
     if (state.cicle_state == CoordinatorState.GIVING_TASKS and
     not state.received_chains.is_empty):

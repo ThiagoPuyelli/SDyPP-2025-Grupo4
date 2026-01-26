@@ -4,3 +4,5 @@ AWAIT_RESPONSE_DURATION = 0.5 * 60
 MAX_MINING_ATTEMPTS = 3
 ACCEPTED_ALGORITHM = "md5"
 PRIZE_AMOUNT = float(10)
+
+DEFAULT_PREFIX = "0000" # si no fue inicializado, el prefijo arranca en este valor
