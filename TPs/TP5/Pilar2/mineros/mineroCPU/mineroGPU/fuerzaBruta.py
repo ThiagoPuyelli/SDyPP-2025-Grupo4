@@ -36,20 +36,22 @@ def conseguirHash(hash_objetivo, cadena, minimo, maximo, stop):
         proceso = subprocess.run(
             comando,
             capture_output=True,
-            text=True,
         )
+
+        stdout = proceso.stdout.decode("utf-8", errors="ignore")
+        stderr = proceso.stderr.decode("utf-8", errors="ignore")
 
         if proceso.returncode != 0:
             logger.error("Error ejecutando fuerzaBruta (CUDA)")
-            logger.error(proceso.stderr)
+            logger.error(stderr)
             return None, None
 
         try:
-            salida = json.loads(proceso.stdout)
+            salida = json.loads(stdout)
             logger.debug(f"Salida CUDA: {salida}")
         except json.JSONDecodeError:
             logger.error("Salida CUDA inválida:")
-            logger.error(proceso.stdout)
+            logger.error(stdout)
             return None, None
 
         if salida.get("found"):
