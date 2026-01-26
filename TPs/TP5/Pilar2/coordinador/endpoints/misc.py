@@ -36,8 +36,3 @@ def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
 @router.get("/")
 def root():
     return {"status": "ok"}
-
-@router.put("/prefix")
-async def submit_result(prefijo: str = Query(...)):
-    state.next_target_prefix = prefijo
-    return {"status": "received"}
