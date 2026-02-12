@@ -15,6 +15,7 @@ export default function Home() {
 const styles: Record<string, React.CSSProperties> = {
     container: {
         width: "100%",
+        marginTop: "4rem",
     },
     title: {
         fontSize: 24,

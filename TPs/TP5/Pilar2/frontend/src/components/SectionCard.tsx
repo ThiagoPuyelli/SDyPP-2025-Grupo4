@@ -1,33 +1,48 @@
-import React from "react";
+import { useState } from "react";
+import type { ReactNode, CSSProperties } from "react";
 
 type SectionCardProps = {
     title: string;
     loading?: boolean;
     onReload?: () => void;
-    children: React.ReactNode;
+    children: ReactNode;
 };
 
 export function SectionCard({ title, loading, onReload, children }: SectionCardProps) {
+    const [collapsed, setCollapsed] = useState(false);
+
     return (
         <div style={styles.card}>
             <div style={styles.header}>
                 <span style={styles.title}>{title}</span>
+
+                <div style={styles.actions}>
+                    <button
+                        style={styles.collapseButton}
+                        onClick={() => setCollapsed((c) => !c)}
+                        aria-label={collapsed ? "Expandir" : "Colapsar"}
+                    >
+                        {collapsed ? "▸" : "▾"}
+                    </button>
 
                 {onReload && (
                     <button style={styles.reloadButton} disabled={loading} onClick={onReload}>
                         {loading ? "…" : "↻"}
                     </button>
                 )}
+                </div>
             </div>
 
-            <div style={styles.body}>
-                {loading && !children ? <span>Cargando...</span> : children}
-            </div>
+            {!collapsed && (
+                <div style={styles.body}>
+                    {loading && !children ? <span>Cargando...</span> : children}
+                </div>
+            )}
         </div>
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
     card: {
         border: "1px solid #e5e7eb",
         borderRadius: 8,
@@ -56,6 +71,19 @@ const styles: Record<string, React.CSSProperties> = {
         cursor: "pointer",
         fontSize: 14,
         outline: "none",
+    },
+    actions: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+    },
+    collapseButton: {
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        fontSize: 14,
+        outline: "none",
+        padding: "0 2px",
     },
     body: {
         padding: 12,

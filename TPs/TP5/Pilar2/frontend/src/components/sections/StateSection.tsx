@@ -4,7 +4,7 @@ import { SectionCard } from "../SectionCard";
 
 export function StateSection() {
     const {
-        data: state,
+        data,
         // isLoading,
         isFetching,
         refetch,
@@ -20,18 +20,17 @@ export function StateSection() {
     });
 
     return (
-
         <SectionCard
-            title="Estado del nodo"
+            title="Estado del coordinador"
             loading={isFetching}
             onReload={refetch}
         >
             {error && <p>Error al cargar estado</p>}
-            {state && (
+            {data && (
                 <>
-                    <p>Estado: <strong>{state.state}</strong></p>
-                    <p>Descripcion: {state.description}</p>
-                    <p>Prefijo objetivo: {state.target_prefix}</p>
+                    <p>Estado: <strong>{data.state}</strong></p>
+                    <p>Descripcion: {data.description}</p>
+                    <p>Prefijo objetivo: {data.target_prefix}</p>
                 </>
             )}
         </SectionCard>
