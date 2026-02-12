@@ -3,8 +3,21 @@ from fastapi import FastAPI, Response
 from scheduler import scheduler
 from endpoints import results, misc, tasks
 from metrics import metrics_response
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(title="Blockchain Coordinator")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://34.23.224.114.nip.io/",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Incluir routers
 app.include_router(tasks.router)
