@@ -5,7 +5,7 @@ import { SectionCard } from "../SectionCard";
 export function StateSection() {
     const {
         data: state,
-        isLoading,
+        // isLoading,
         isFetching,
         refetch,
         error,
