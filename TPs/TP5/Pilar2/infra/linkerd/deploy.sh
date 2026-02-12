@@ -30,13 +30,13 @@ fi
 # -------------------------
 # 1) Crear namespaces
 # -------------------------
-for ns in blockchain pool; do
+for ns in blockchain pool frontend; do
   kubectl create namespace $ns --dry-run=client -o yaml | kubectl apply -f -
 done
 
 # -------------------------
 # 2) Labelar namespaces
 # -------------------------
-for ns in blockchain pool; do
+for ns in blockchain pool frontend; do
   kubectl annotate namespace $ns linkerd.io/inject=enabled --overwrite
 done
