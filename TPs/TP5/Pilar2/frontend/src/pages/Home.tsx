@@ -1,3 +1,4 @@
+import { ChainSection } from "../components/sections/ChainSection";
 import { StateSection } from "../components/sections/StateSection";
 
 export default function Home() {
@@ -7,6 +8,7 @@ export default function Home() {
 
             <div style={styles.sections}>
                 <StateSection />
+                <ChainSection />
             </div>
         </div>
     );
@@ -16,6 +18,7 @@ const styles: Record<string, React.CSSProperties> = {
     container: {
         width: "100%",
         marginTop: "4rem",
+        marginBottom: "2rem"
     },
     title: {
         fontSize: 24,

@@ -49,7 +49,9 @@ const styles: Record<string, CSSProperties> = {
         backgroundColor: "#ffffff",
         display: "inline-block",
         minWidth: 300,
-        width: "100%"
+        width: "100%",
+        maxHeight: "90vh",
+        overflow: "auto",
     },
     header: {
         display: "flex",
@@ -60,6 +62,10 @@ const styles: Record<string, CSSProperties> = {
         backgroundColor: "#f9fafb",
         borderTopLeftRadius: 8,
         borderTopRightRadius: 8,
+
+        position: "sticky",
+        top: 0,
+        zIndex: 1,
     },
     title: {
         fontSize: 14,
