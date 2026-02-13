@@ -31,7 +31,7 @@ export function ChainSection() {
                     {block.blockchain_config && (
                         <div>
                             <br />
-                            blockchain_config:
+                            <b>blockchain_config:</b>
                             <div><b>accepted_algorithm: </b>{block.blockchain_config.accepted_algorithm}</div>
                             <div><b>await_response_duration: </b>{block.blockchain_config.await_response_duration}s</div>
                             <div><b>interval_duration: </b>{block.blockchain_config.interval_duration}s</div>
@@ -46,13 +46,13 @@ export function ChainSection() {
                     <div><b>nonce:</b> {block.nonce}</div>
 
                     <div style={styles.txTitle}>transaction:</div>
-                    <div style={styles.txFields}><b>source:</b> {block.transaction.source.slice(0, 80)}{block.transaction.source.length > 80 && (<>…</>)}</div>
+                    <div style={styles.txFields}><b>source:</b> {block.transaction.source}</div>
                     {block.transaction.target && (
-                        <div style={styles.txFields}><b>target:</b> {block.transaction.target.slice(0, 80)}{block.transaction.target.length > 80 && (<>…</>)}</div>
+                        <div style={styles.txFields}><b>target:</b> {block.transaction.target}</div>
                     )}
                     <div style={styles.txFields}><b>amount:</b> {block.transaction.amount}</div>
                     <div style={styles.txFields}><b>timestamp:</b> {block.transaction.timestamp}</div>
-                    <div style={styles.txFields}><b>sign:</b> {block.transaction.sign.slice(0, 80)}{block.transaction.sign.length > 80 && (<>…</>)}</div>
+                    <div style={styles.txFields}><b>sign:</b> {block.transaction.sign}</div>
                     <hr />
                 </div>
             ))}
@@ -62,15 +62,19 @@ export function ChainSection() {
 
 const styles: Record<string, React.CSSProperties> = {
     block: {
-
+        fontFamily: "monospace",
+        overflowWrap: "anywhere",
+        fontSize: "0.9rem"
     },
     blockHeader: {
-        fontSize: "1.2rem"
+        fontSize: "1.1rem",
+        fontWeight: "bold",
     },
     txTitle: {
-        fontSize: "1.2rem"
+        fontSize: "1.1rem",
+        fontWeight: "bold",
     },
     txFields: {
-        marginLeft: "1rem"
+        marginLeft: "1rem",
     },
 };
