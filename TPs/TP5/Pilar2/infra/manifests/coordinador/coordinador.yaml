@@ -78,7 +78,7 @@ spec:
               echo "Redis disponible"
       containers:
         - name: coordinador
-          image: matiasherrneder/blockchain-coordinador:2d41d5f
+          image: matiasherrneder/blockchain-coordinador:5dd01f8
           ports:
             - containerPort: 8000
           envFrom:
