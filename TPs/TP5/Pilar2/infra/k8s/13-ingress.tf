@@ -4,11 +4,6 @@ resource "kubernetes_namespace" "ingress_nginx" {
     }
 }
 
-variable "nginx_ip" {
-    type        = string
-    description = "IP estática del ingress nginx"
-}
-
 resource "helm_release" "nginx_ingress" {
     name       = "ingress-nginx"
     namespace  = kubernetes_namespace.ingress_nginx.metadata[0].name

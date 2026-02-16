@@ -21,3 +21,8 @@ variable "cluster_name" {
   type        = string
   description = "Nombre del cluster de Kubernetes"
 }
+
+variable "nginx_ip" {
+    type        = string
+    description = "IP estática del ingress nginx"
+}
