@@ -73,15 +73,20 @@ def handle_selecting_winner():
     logger.info(f"Cadenas recibidas: {all_chains}")
 
     best_chain = max(all_chains, key=lambda c: len(c.blocks), default=None)
+    active_before_cycle = state.active_transactions.get_all_transactions_with_ttl()
 
     # LO PRIMERO QUE HACEMOS ES BORRAR RECEIVED_CHAINS, necesario para la gestion ante fallos,
         # ya que validaremos esta estructura cuando el servidor inicia
     state.received_chains.clear()
-    mined_signatures = {}
+    mined_signatures = set()
+    mined_blocks = []
+    requeued_transactions = []
+    discarded_transactions = []
 
     if best_chain:
         state.blockchain.extend(best_chain)
         logger.info("✔️ Cadena aceptada")
+        mined_blocks = best_chain.blocks
         
         # premio al ganador
         active_tx = ActiveTransaction(
@@ -95,7 +100,7 @@ def handle_selecting_winner():
         )
         state.pending_transactions.put(active_tx)
         
-        mined_signatures = {block.transaction.sign for block in best_chain.blocks}
+        mined_signatures = {block.transaction.sign for block in mined_blocks}
     
     else:
         logger.info("⚠️ No se recibió cadena válida")
@@ -104,14 +109,16 @@ def handle_selecting_winner():
     adjust_difficulty(best_chain)
 
     # Procesar activas: pasar las no minadas a pending, actualizar TTL o descartarlas
-    for active_tx in state.active_transactions.get_all_transactions_with_ttl():
+    for active_tx in active_before_cycle:
         tx = active_tx.transaction
         if tx.sign not in mined_signatures:
             active_tx.ttl += 1
             if active_tx.ttl <= MAX_MINING_ATTEMPTS or tx.source == "0": # si es generada por la blockchain no deberia expirar
                 state.pending_transactions.put(active_tx) # mover a pendiente nuevamente
+                requeued_transactions.append(active_tx)
                 logger.info(f"🔁 Reencolando {tx.sign} (TTL {active_tx.ttl})")
             else:
+                discarded_transactions.append(active_tx)
                 logger.warning(f"❌ Transacción descartada por TTL: {tx.sign}")
         else:
             logger.info(f"✅ Transacción minada: {tx.sign}")
@@ -125,3 +132,22 @@ def handle_selecting_winner():
 
     # borrar las pendientes
     state.pending_transactions.clear()
+
+    current_active = state.active_transactions.get_all_transactions_with_ttl()
+    cycle_summary = {
+        "completed_at": mono_time.get_hora_actual().isoformat(),
+        "received_chains_count": len(all_chains),
+        "selected_blocks": [block.model_dump() for block in mined_blocks],
+        "active_before_cycle": [tx.model_dump() for tx in active_before_cycle],
+        "requeued_transactions": [tx.model_dump() for tx in requeued_transactions],
+        "discarded_transactions": [tx.model_dump() for tx in discarded_transactions],
+        "current_active_transactions": [tx.model_dump() for tx in current_active],
+        "counts": {
+            "active_before_cycle": len(active_before_cycle),
+            "mined_blocks": len(mined_blocks),
+            "requeued_transactions": len(requeued_transactions),
+            "discarded_transactions": len(discarded_transactions),
+            "current_active_transactions": len(current_active),
+        },
+    }
+    state.persistent_state.set_last_cycle_summary(cycle_summary)

@@ -48,6 +48,16 @@ spec:
               EOF
               vault policy write blockchain-policy /tmp/blockchain-policy.hcl
 
+              cat > /tmp/pool-policy.hcl <<'EOF'
+              path "secret/data/pool" {
+                capabilities = ["read"]
+              }
+              path "secret/data/pool/*" {
+                capabilities = ["read"]
+              }
+              EOF
+              vault policy write pool-policy /tmp/pool-policy.hcl
+
               echo "Configurando autenticación Kubernetes..."
               vault auth enable kubernetes >/dev/null 2>&1 || true
               vault write auth/kubernetes/config \
@@ -61,6 +71,12 @@ spec:
                 policies="blockchain-policy" \
                 ttl="24h"
 
+              vault write auth/kubernetes/role/pool-role \
+                bound_service_account_names="pool-sa" \
+                bound_service_account_namespaces="pool" \
+                policies="pool-policy" \
+                ttl="24h"
+
               echo "Cargando secretos desde variables de entorno..."
               vault kv put secret/blockchain \
                 RABBIT_USER="${RABBIT_USER}" \
@@ -68,5 +84,9 @@ spec:
                 REDIS_DB="${REDIS_DB}" \
                 GRAFANA_USER="${GRAFANA_USER:-admin}" \
                 GRAFANA_PASS="${GRAFANA_PASS:-admin}"
+
+              POOL_PK_NORMALIZED="$(printf '%b' "${POOL_PK}")"
+              vault kv put secret/pool \
+                POOL_PK="${POOL_PK_NORMALIZED}"
 
               echo "Bootstrap de Vault terminado."

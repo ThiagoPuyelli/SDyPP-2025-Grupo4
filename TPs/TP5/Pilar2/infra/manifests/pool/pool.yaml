@@ -13,16 +13,75 @@ spec:
       labels:
         app: pool
     spec:
+      serviceAccountName: pool-sa
+      initContainers:
+        - name: vault-agent-init
+          image: hashicorp/vault:1.15.4
+          env:
+            - name: VAULT_ADDR
+              value: http://vault.secret.svc:8200
+          volumeMounts:
+            - name: vault-config
+              mountPath: /vault/config
+            - name: vault-secrets
+              mountPath: /vault/secrets
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              cat > /vault/config/agent.hcl <<'EOF'
+              exit_after_auth = true
+              pid_file = "/tmp/vault-agent.pid"
+
+              auto_auth {
+                method "kubernetes" {
+                  mount_path = "auth/kubernetes"
+                  config = {
+                    role = "pool-role"
+                  }
+                }
+                sink "file" {
+                  config = {
+                    path = "/vault/secrets/.token"
+                  }
+                }
+              }
+
+              template {
+                destination = "/vault/secrets/POOL_PK"
+                contents = "{{- with secret \"secret/data/pool\" -}}{{ .Data.data.POOL_PK }}{{- end }}"
+              }
+              EOF
+
+              vault agent -config=/vault/config/agent.hcl -log-level=info
       containers:
         - name: pool
           image: matiasherrneder/blockchain-pool:a72629d
           ports:
             - containerPort: 8000
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              POOL_PK_RAW="$(cat /vault/secrets/POOL_PK)"
+              export POOL_PK="$(printf '%b' "${POOL_PK_RAW}")"
+              exec uvicorn main:app --host 0.0.0.0 --port 8000
           envFrom:
             - configMapRef:
                 name: pool-config
+          volumeMounts:
+            - name: vault-secrets
+              mountPath: /vault/secrets
+              readOnly: true
       nodeSelector:
         role: infraestructura
+      volumes:
+        - name: vault-config
+          emptyDir: {}
+        - name: vault-secrets
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

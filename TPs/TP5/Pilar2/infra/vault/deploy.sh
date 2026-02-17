@@ -15,8 +15,10 @@ fi
 
 echo "Aplicando namespaces y cuentas de servicio..."
 kubectl apply -f "${MANIFEST_ROOT}/namespace-coordinador.yaml"
+kubectl apply -f "${MANIFEST_ROOT}/namespace-pool.yaml"
 kubectl apply -f "${VAULT_MANIFESTS}/namespace.yaml"
 kubectl apply -f "${VAULT_MANIFESTS}/blockchain-serviceaccounts.yaml"
+kubectl apply -f "${VAULT_MANIFESTS}/pool-serviceaccount.yaml"
 
 echo "Desplegando Vault..."
 kubectl apply -f "${VAULT_MANIFESTS}/vault.yaml"
@@ -32,6 +34,6 @@ kubectl -n secret delete job vault-bootstrap --ignore-not-found
 kubectl apply -f "${VAULT_MANIFESTS}/bootstrap-job.yaml"
 kubectl -n secret wait --for=condition=complete job/vault-bootstrap --timeout=300s
 
-echo "Vault desplegado y secretos cargados en secret/data/blockchain."
+echo "Vault desplegado y secretos cargados en secret/data/blockchain y secret/data/pool."
 echo "Ahora podés aplicar el resto de los manifiestos con:"
 echo "  kubectl apply -f ${MANIFEST_ROOT} --recursive"

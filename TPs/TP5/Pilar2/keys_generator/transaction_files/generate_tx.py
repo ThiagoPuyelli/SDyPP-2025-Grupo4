@@ -9,15 +9,15 @@ from cryptography.hazmat.primitives.asymmetric import padding
 # Paths
 # ======================
 
-KEYS_DIR = Path("/keys")        # dentro de la imagen
-OUTPUT_DIR = Path("/output")    # directorio montado al host
+KEYS_DIR = Path("./keys")        # dentro de la imagen
+OUTPUT_DIR = Path("./output")    # directorio montado al host
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 SOURCE_PRIVATE = KEYS_DIR / "private_key_1.pem"
 SOURCE_PUBLIC = KEYS_DIR / "public_key_1.pem"
-TARGET_PUBLIC = KEYS_DIR / "public_key_2.pem"
+TARGET_PUBLIC = KEYS_DIR / "public_key_4.pem"
 
-amount = 199
+amount = 2
 timestamp = "string"
 
 # ======================

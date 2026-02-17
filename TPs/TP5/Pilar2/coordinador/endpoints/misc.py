@@ -1,4 +1,3 @@
-from itertools import chain
 from fastapi import APIRouter, Query, HTTPException
 import state
 from monotonic import mono_time
@@ -17,6 +16,24 @@ def get_state():
         "description": state.cicle_state.value,
         "server-date-time": mono_time.get_hora_actual(),
         "target-prefix": state.persistent_state.get_prefix(),
+    }
+
+@router.get("/cycle/summary")
+def get_cycle_summary():
+    active_transactions = state.active_transactions.get_all_transactions_with_ttl()
+    pending_transactions = state.pending_transactions.get_all_transactions_with_ttl()
+
+    return {
+        "last_cycle": state.persistent_state.get_last_cycle_summary(),
+        "current": {
+            "state": state.cicle_state.name,
+            "counts": {
+                "active_transactions": len(active_transactions),
+                "pending_transactions": len(pending_transactions),
+            },
+            "active_transactions": [tx.model_dump() for tx in active_transactions],
+            "pending_transactions": [tx.model_dump() for tx in pending_transactions],
+        },
     }
 
 @router.get("/block")
