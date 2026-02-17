@@ -54,7 +54,7 @@ spec:
               }
               EOF
 
-              vault agent -config=/vault/config/agent.hcl -log-level=info
+              /bin/vault agent -config=/vault/config/agent.hcl -log-level=info
       containers:
         - name: pool
           image: matiasherrneder/blockchain-pool:1b55d6c
