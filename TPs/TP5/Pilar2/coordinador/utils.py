@@ -194,6 +194,23 @@ def has_sufficient_funds(tx: Transaction) -> bool:
         if btx.source == tx.source:
             balance -= btx.amount
 
+    act = state.active_transactions.peek_all()
+    pend = state.pending_transactions.peek_all()
+
+    for t in act:
+        if t.target == tx.source:
+            balance += t.amount
+
+        if t.source == tx.source:
+            balance -= t.amount
+
+    for t in pend:
+        if t.target == tx.source:
+            balance += t.amount
+
+        if t.source == tx.source:
+            balance -= t.amount
+
     if balance >= tx.amount:
         return True
 
