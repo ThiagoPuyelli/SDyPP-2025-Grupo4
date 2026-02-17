@@ -28,6 +28,6 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: matiasherrneder/blockchain-frontend:0560dc4
+          image: matiasherrneder/blockchain-frontend:ae8c71a
           ports:
             - containerPort: 80
