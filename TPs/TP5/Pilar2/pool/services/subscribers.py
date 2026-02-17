@@ -58,7 +58,7 @@ class RedisSubscribers(Subscribers):
         for miner_id, share_count in data.items():
             miners.append(
                 Miner(
-                    id=miner_id.decode("utf-8"),
+                    id=miner_id,
                     share_count=int(share_count)
                 )
             )
