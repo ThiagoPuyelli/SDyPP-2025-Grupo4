@@ -12,6 +12,9 @@ echo "|----- Deploying Vault..."
 echo "|----- Deploying Observability..."
 ./observability/deploy.sh
 
+echo "|----- Deploying Keda..."
+./keda/deploy.sh
+
 echo "|----- Deploying Argo CD..."
 ./argocd/deploy.sh
 

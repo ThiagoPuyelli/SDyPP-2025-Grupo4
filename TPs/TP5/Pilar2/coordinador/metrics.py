@@ -35,6 +35,10 @@ received_chains_size = Gauge(
     "Cantidad de cadenas recibidas en el ciclo actual",
 )
 
+miners_gauge = Gauge(
+    "mining_workers_desired",
+    "Desired number of mining workers"
+)
 
 def record_tx(status: str) -> None:
     tx_submitted_total.labels(status=status).inc()
@@ -52,6 +56,20 @@ def update_queue_metrics(pending: int, active: int, received: int) -> None:
     pending_queue_size.set(pending)
     active_queue_size.set(active)
     received_chains_size.set(received)
+
+def update_prefix_metric(prefix: str) -> None:
+    difficulty = len(prefix)
+
+    if difficulty <= 4:
+        miners = 5
+    elif difficulty == 5:
+        miners = 3
+    elif difficulty >= 6:
+        miners = 1
+    else:
+        miners = 5  # default
+
+    miners_gauge.set(miners)
 
 
 def metrics_response():

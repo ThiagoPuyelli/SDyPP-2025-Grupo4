@@ -1,5 +1,6 @@
 import hashlib
 from datetime import datetime, timezone
+from metrics import update_prefix_metric
 import config
 from state import CoordinatorState
 from typing import Optional
@@ -54,6 +55,7 @@ def adjust_difficulty(best_chain: MinedChain):
         logger.info(f"Ajustando dificultad: {current_target_prefix} -> {next_target_prefix}")
     else:
         logger.info(f"Dificultad se mantiene: {current_target_prefix}")
+    update_prefix_metric(next_target_prefix)
     state.persistent_state.set_prefix(next_target_prefix)
 
 def ajustar_ceros(cadena, cantidad):
