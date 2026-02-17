@@ -23,3 +23,4 @@ class MinedChain(BaseModel):
 class ActiveTransaction(BaseModel):
     transaction: Transaction
     ttl: int = 0
+    mining_started_at: str | None = None

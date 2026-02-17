@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 # Contadores de negocio
 tx_submitted_total = Counter(
@@ -40,6 +40,14 @@ miners_gauge = Gauge(
     "Desired number of mining workers"
 )
 
+mining_duration_seconds = Histogram(
+    "coordinador_mining_duration_seconds",
+    "Tiempo de minado por transaccion en la cadena ganadora del ciclo",
+    ["prefix"],
+    buckets=(0.1, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 180, 300, float("inf")),
+)
+
+
 def record_tx(status: str) -> None:
     tx_submitted_total.labels(status=status).inc()
 
@@ -70,6 +78,12 @@ def update_prefix_metric(prefix: str) -> None:
         miners = 5  # default
 
     miners_gauge.set(miners)
+
+
+def record_mining_duration(prefix: str, seconds: float) -> None:
+    if seconds < 0:
+        return
+    mining_duration_seconds.labels(prefix=prefix).observe(seconds)
 
 
 def metrics_response():
