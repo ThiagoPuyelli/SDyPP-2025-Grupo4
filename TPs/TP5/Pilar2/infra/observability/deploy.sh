@@ -12,6 +12,64 @@ PROMETHEUS_RELEASE="prometheus"
 ENV_FILE="${SCRIPT_DIR}/../vault/.env"
 DASHBOARDS_DIR="${SCRIPT_DIR}/dashboards"
 
+find_grafana_pod() {
+  local pod=""
+  pod="$(kubectl -n "${NAMESPACE}" get pods \
+    -l app.kubernetes.io/name=grafana,app.kubernetes.io/instance="${RELEASE}" \
+    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+  if [[ -n "${pod}" ]]; then
+    echo "${pod}"
+    return 0
+  fi
+
+  pod="$(kubectl -n "${NAMESPACE}" get pods \
+    -l app=grafana,release="${RELEASE}" \
+    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+  echo "${pod}"
+}
+
+sync_grafana_admin_password() {
+  local grafana_pod=""
+  grafana_pod="$(find_grafana_pod)"
+
+  if [[ -z "${grafana_pod}" ]]; then
+    echo "No se encontró pod de Grafana para sincronizar contraseña admin." >&2
+    return 1
+  fi
+
+  echo "Sincronizando contraseña admin en grafana.db (PVC persistente)..."
+  if kubectl -n "${NAMESPACE}" exec "${grafana_pod}" -c grafana -- \
+    grafana cli admin reset-admin-password "${GRAFANA_PASS}" >/dev/null 2>&1; then
+    echo "Contraseña admin sincronizada correctamente."
+    return 0
+  fi
+
+  if kubectl -n "${NAMESPACE}" exec "${grafana_pod}" -c grafana -- \
+    grafana-cli admin reset-admin-password "${GRAFANA_PASS}" >/dev/null 2>&1; then
+    echo "Contraseña admin sincronizada correctamente (fallback grafana-cli)."
+    return 0
+  fi
+
+  echo "No se pudo sincronizar la contraseña admin en Grafana." >&2
+  return 1
+}
+
+normalize_credential() {
+  local value="${1-}"
+  value="${value%$'\r'}"
+  printf '%s' "${value}"
+}
+
+has_control_chars() {
+  local value="${1-}"
+  [[ "${value}" =~ [[:cntrl:]] ]]
+}
+
+has_edge_whitespace() {
+  local value="${1-}"
+  [[ "${value}" =~ ^[[:space:]] || "${value}" =~ [[:space:]]$ ]]
+}
+
 echo "Creando namespace ${NAMESPACE}..."
 kubectl apply -f "${SCRIPT_DIR}/namespace.yaml"
 
@@ -35,6 +93,25 @@ if [[ -z "${GRAFANA_USER:-}" || -z "${GRAFANA_PASS:-}" ]]; then
   exit 1
 fi
 
+RAW_GRAFANA_USER="${GRAFANA_USER}"
+RAW_GRAFANA_PASS="${GRAFANA_PASS}"
+GRAFANA_USER="$(normalize_credential "${GRAFANA_USER}")"
+GRAFANA_PASS="$(normalize_credential "${GRAFANA_PASS}")"
+
+if [[ "${RAW_GRAFANA_USER}" != "${GRAFANA_USER}" || "${RAW_GRAFANA_PASS}" != "${GRAFANA_PASS}" ]]; then
+  echo "Se removieron retornos de carro (\\r) de GRAFANA_USER/GRAFANA_PASS leídos desde ${ENV_FILE}."
+fi
+
+if has_control_chars "${GRAFANA_USER}" || has_control_chars "${GRAFANA_PASS}"; then
+  echo "GRAFANA_USER/GRAFANA_PASS contienen caracteres de control no válidos en ${ENV_FILE}." >&2
+  exit 1
+fi
+
+if has_edge_whitespace "${GRAFANA_USER}" || has_edge_whitespace "${GRAFANA_PASS}"; then
+  echo "GRAFANA_USER/GRAFANA_PASS tienen espacios al inicio o al final en ${ENV_FILE}." >&2
+  exit 1
+fi
+
 kubectl -n "${NAMESPACE}" create secret generic grafana-admin \
   --from-literal=admin-user="${GRAFANA_USER}" \
   --from-literal=admin-password="${GRAFANA_PASS}" \
@@ -55,8 +132,12 @@ helm upgrade --install "${RELEASE}" grafana/loki-stack \
   --create-namespace \
   -f "${VALUES_FILE}"
 
+echo "Reiniciando Grafana para aplicar cambios de credenciales en Secret..."
+kubectl -n "${NAMESPACE}" rollout restart deploy/"${RELEASE}"-grafana || true
+
 echo "Esperando a que Grafana y Loki estén listos..."
 kubectl -n "${NAMESPACE}" rollout status deploy/"${RELEASE}"-grafana --timeout=300s
+sync_grafana_admin_password
 LOKI_STS="$(kubectl -n "${NAMESPACE}" get sts -l app=loki,release="${RELEASE}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
 if [[ -n "${LOKI_STS}" ]]; then
   kubectl -n "${NAMESPACE}" rollout status statefulset/"${LOKI_STS}" --timeout=300s || true

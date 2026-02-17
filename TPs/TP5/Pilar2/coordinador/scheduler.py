@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from models import ActiveTransaction, Transaction
 from config import MAX_MINING_ATTEMPTS, PRIZE_AMOUNT
 from state import CoordinatorState
@@ -6,7 +7,7 @@ from utils import adjust_difficulty, create_genesis_block, get_starting_phase
 import state
 from log_config import setup_logger_con_monotonic, logger
 from monotonic import mono_time
-from metrics import update_queue_metrics, record_cycle
+from metrics import update_queue_metrics, record_cycle, record_mining_duration
 
 def scheduler():
     global logger
@@ -68,6 +69,8 @@ def scheduler():
 def handle_selecting_winner():
     state.cicle_state = CoordinatorState.SELECTING_WINNER
     logger.info(f"[STATE] {state.cicle_state.name}")
+    cycle_closed_at = mono_time.get_hora_actual()
+    cycle_prefix = state.persistent_state.get_prefix()
 
     all_chains = state.received_chains.get_all_chains()
     logger.info(f"Cadenas recibidas: {all_chains}")
@@ -82,6 +85,7 @@ def handle_selecting_winner():
     mined_blocks = []
     requeued_transactions = []
     discarded_transactions = []
+    mined_duration_samples = []
 
     if best_chain:
         state.blockchain.extend(best_chain)
@@ -121,6 +125,24 @@ def handle_selecting_winner():
                 discarded_transactions.append(active_tx)
                 logger.warning(f"❌ Transacción descartada por TTL: {tx.sign}")
         else:
+            if active_tx.mining_started_at:
+                try:
+                    started_at = datetime.fromisoformat(active_tx.mining_started_at)
+                    mining_seconds = (cycle_closed_at - started_at).total_seconds()
+                    record_mining_duration(cycle_prefix, mining_seconds)
+                    mined_duration_samples.append(
+                        {
+                            "tx_sign": tx.sign,
+                            "seconds": mining_seconds,
+                            "prefix": cycle_prefix,
+                        }
+                    )
+                    logger.info(
+                        f"metric=mining_duration prefix={cycle_prefix} "
+                        f"seconds={mining_seconds:.6f} tx_sign={tx.sign[:12]}"
+                    )
+                except Exception:
+                    logger.warning(f"No se pudo calcular tiempo de minado para tx {tx.sign}")
             logger.info(f"✅ Transacción minada: {tx.sign}")
 
     # Limpiar las activas antiguas
@@ -128,6 +150,7 @@ def handle_selecting_winner():
 
     # Mover todas las pendientes a activas para el próximo ciclo
     while (tx := state.pending_transactions.get()) is not None:
+        tx.mining_started_at = cycle_closed_at.isoformat()
         state.active_transactions.put(tx)
 
     # borrar las pendientes
@@ -135,18 +158,21 @@ def handle_selecting_winner():
 
     current_active = state.active_transactions.get_all_transactions_with_ttl()
     cycle_summary = {
-        "completed_at": mono_time.get_hora_actual().isoformat(),
+        "completed_at": cycle_closed_at.isoformat(),
+        "cycle_prefix": cycle_prefix,
         "received_chains_count": len(all_chains),
         "selected_blocks": [block.model_dump() for block in mined_blocks],
         "active_before_cycle": [tx.model_dump() for tx in active_before_cycle],
         "requeued_transactions": [tx.model_dump() for tx in requeued_transactions],
         "discarded_transactions": [tx.model_dump() for tx in discarded_transactions],
+        "mined_duration_samples": mined_duration_samples,
         "current_active_transactions": [tx.model_dump() for tx in current_active],
         "counts": {
             "active_before_cycle": len(active_before_cycle),
             "mined_blocks": len(mined_blocks),
             "requeued_transactions": len(requeued_transactions),
             "discarded_transactions": len(discarded_transactions),
+            "mined_duration_samples": len(mined_duration_samples),
             "current_active_transactions": len(current_active),
         },
     }

@@ -69,7 +69,7 @@ kubectl get nodes
 ### Observabilidad (Loki + Promtail + Grafana)
 1. Ir a `observability` y ejecutar:
    ```
-   ./observability/install.sh
+   ./observability/deploy.sh
    ```
    Instala el chart `loki-stack` en el namespace `observability` con Loki+Promtail+Grafana, PVCs y dashboard de logs.
 2. Acceso a Grafana:
@@ -78,7 +78,7 @@ kubectl get nodes
    ```
    - Si es LoadBalancer, usar la IP externa.
    - O `kubectl -n observability port-forward svc/loki-stack-grafana 3000:80`.
-   Usuario/clave por defecto: `admin` / `admin`.
+   Usuario/clave: `GRAFANA_USER` / `GRAFANA_PASS` definidos en `vault/.env`.
 
 ### Despliegue de los manifiestos
 En el directorio /manifests
