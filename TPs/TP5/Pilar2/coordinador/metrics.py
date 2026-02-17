@@ -68,14 +68,16 @@ def update_queue_metrics(pending: int, active: int, received: int) -> None:
 def update_prefix_metric(prefix: str) -> None:
     difficulty = len(prefix)
 
-    if difficulty <= 4:
+    if difficulty <= 5:
         miners = 5
-    elif difficulty == 5:
+    elif difficulty == 6:
+        miners = 4
+    elif difficulty == 7:
         miners = 3
-    elif difficulty >= 6:
-        miners = 1
+    elif difficulty == 8:
+        miners = 2
     else:
-        miners = 5  # default
+        miners = 1
 
     miners_gauge.set(miners)
 
