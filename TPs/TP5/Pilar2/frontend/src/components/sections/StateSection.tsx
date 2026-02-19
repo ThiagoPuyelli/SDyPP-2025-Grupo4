@@ -9,6 +9,7 @@ export function StateSection() {
         isFetching,
         refetch,
         error,
+        dataUpdatedAt,
     } = useQuery({
         queryKey: ["state"],
         queryFn: fetchState,
@@ -24,6 +25,7 @@ export function StateSection() {
             title="Estado del coordinador"
             loading={isFetching}
             onReload={refetch}
+            lastUpdatedAt={dataUpdatedAt}
         >
             {error && <p>Error al cargar estado</p>}
             {data && (

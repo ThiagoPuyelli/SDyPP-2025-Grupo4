@@ -9,6 +9,7 @@ export function ChainSection() {
         isFetching,
         refetch,
         error,
+        dataUpdatedAt,
     } = useQuery({
         queryKey: ["chain"],
         queryFn: fetchChain,
@@ -20,6 +21,7 @@ export function ChainSection() {
             title="Cadena completa de la blockchain"
             loading={isFetching}
             onReload={refetch}
+            lastUpdatedAt={dataUpdatedAt}
         >
             {error && <p>Error al cargar la cadena</p>}
             {blocks?.map((block, index) => (

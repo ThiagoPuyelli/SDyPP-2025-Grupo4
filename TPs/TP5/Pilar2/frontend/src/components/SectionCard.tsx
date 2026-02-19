@@ -1,15 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode, CSSProperties } from "react";
 
 type SectionCardProps = {
     title: string;
     loading?: boolean;
     onReload?: () => void;
+    lastUpdatedAt?: number;
     children: ReactNode;
 };
 
-export function SectionCard({ title, loading, onReload, children }: SectionCardProps) {
+function formatTimeAgo(timestamp?: number) {
+    if (!timestamp) return "";
+
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+
+    if (seconds < 5) return "recién";
+    if (seconds < 60) return `hace ${seconds}s`;
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `hace ${minutes}m`;
+
+    const hours = Math.floor(minutes / 60);
+    return `hace ${hours}h`;
+}
+
+export function SectionCard({ title, loading, onReload, lastUpdatedAt, children }: SectionCardProps) {
     const [collapsed, setCollapsed] = useState(false);
+
+    const [, forceUpdate] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            forceUpdate((n) => n + 1);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <div style={styles.card}>
@@ -17,6 +43,9 @@ export function SectionCard({ title, loading, onReload, children }: SectionCardP
                 <span style={styles.title}>{title}</span>
 
                 <div style={styles.actions}>
+                    <span style={styles.updated}>
+                        {formatTimeAgo(lastUpdatedAt)}
+                    </span>
                     <button
                         style={styles.collapseButton}
                         onClick={() => setCollapsed((c) => !c)}
@@ -77,11 +106,12 @@ const styles: Record<string, CSSProperties> = {
         cursor: "pointer",
         fontSize: 14,
         outline: "none",
+        padding: "0.5rem 1rem 0.5rem 0",
     },
     actions: {
         display: "flex",
         alignItems: "center",
-        gap: 6,
+        gap: "1.5rem",
     },
     collapseButton: {
         background: "none",
@@ -89,9 +119,13 @@ const styles: Record<string, CSSProperties> = {
         cursor: "pointer",
         fontSize: 14,
         outline: "none",
-        padding: "0 2px",
+        padding: "0.5rem 0",
     },
     body: {
         padding: 12,
+    },
+    updated: {
+        fontSize: 12,
+        color: "#6b7280",
     },
 };
