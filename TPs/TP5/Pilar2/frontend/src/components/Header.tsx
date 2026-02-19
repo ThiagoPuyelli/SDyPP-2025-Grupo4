@@ -43,12 +43,14 @@ const styles: Record<string, CSSProperties> = {
         padding: "10px 16px",
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
+        // justifyContent: "space-between",
+        justifyContent: "end",
     },
     title: {
         fontSize: 15,
         fontWeight: 600,
         color: "#111827",
+        display: "none",
     },
     nav: {
         display: "flex",
