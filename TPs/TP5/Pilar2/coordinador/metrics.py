@@ -47,6 +47,13 @@ mining_duration_seconds = Histogram(
     buckets=(0.1, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 180, 300, float("inf")),
 )
 
+block_validation_duration_seconds = Histogram(
+    "coordinador_block_validation_duration_seconds",
+    "Tiempo de validacion de cada bloque recibido en el endpoint /results",
+    ["prefix", "status"],
+    buckets=(0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, float("inf")),
+)
+
 
 def record_tx(status: str) -> None:
     tx_submitted_total.labels(status=status).inc()
@@ -86,6 +93,12 @@ def record_mining_duration(prefix: str, seconds: float) -> None:
     if seconds < 0:
         return
     mining_duration_seconds.labels(prefix=prefix).observe(seconds)
+
+
+def record_block_validation_duration(prefix: str, status: str, seconds: float) -> None:
+    if seconds < 0:
+        return
+    block_validation_duration_seconds.labels(prefix=prefix, status=status).observe(seconds)
 
 
 def metrics_response():

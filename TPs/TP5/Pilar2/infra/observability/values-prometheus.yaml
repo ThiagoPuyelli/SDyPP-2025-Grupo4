@@ -9,7 +9,8 @@ server:
     enabled: true
     size: 5Gi
     storageClass: standard-rwo
-  extraScrapeConfigs: |
+
+extraScrapeConfigs: |
     - job_name: coordinador
       metrics_path: /metrics
       static_configs:
