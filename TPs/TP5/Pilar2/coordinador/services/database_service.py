@@ -1,9 +1,10 @@
 from typing import List, Optional, Union
 from abc import ABC, abstractmethod
-from models import ActiveTransaction, MinedBlock, MinedChain, Transaction
+from models import ActiveTransaction, MinedBlock, MinedChain, Transaction, ReceivedChain
 import redis
 import json
 import uuid
+from datetime import datetime, timezone
 
 class BlockchainDatabase(ABC):
     @abstractmethod
@@ -46,11 +47,15 @@ class BlockchainDatabase(ABC):
 
 class ReceivedChainsDatabase(ABC):
     @abstractmethod
-    def add_chain(self, chain: MinedChain) -> None:
+    def add_chain(self, chain: MinedChain, received_at: Optional[str] = None) -> None:
         pass
     
     @abstractmethod
     def get_all_chains(self) -> List[MinedChain]:
+        pass
+
+    @abstractmethod
+    def get_all_received(self) -> List[ReceivedChain]:
         pass
     
     @abstractmethod
@@ -132,12 +137,16 @@ class LocalBlockchainDatabase(BlockchainDatabase):
 
 class LocalReceivedChainsDatabase(ReceivedChainsDatabase):
     def __init__(self):
-        self._chains: List[MinedChain] = []
+        self._chains: List[ReceivedChain] = []
     
-    def add_chain(self, chain: MinedChain) -> None:
-        self._chains.append(chain)
+    def add_chain(self, chain: MinedChain, received_at: Optional[str] = None) -> None:
+        ts = received_at or datetime.now(timezone.utc).isoformat()
+        self._chains.append(ReceivedChain(chain=chain, received_at=ts))
     
     def get_all_chains(self) -> List[MinedChain]:
+        return [entry.chain for entry in self._chains]
+
+    def get_all_received(self) -> List[ReceivedChain]:
         return self._chains.copy()
     
     def clear(self) -> None:
@@ -191,17 +200,37 @@ class RedisReceivedChainsDatabase(ReceivedChainsDatabase):
         self.r = redis_client
         self.key_prefix = "received_chain:"  # Cada cadena se guarda con un UUID único
 
-    def add_chain(self, chain: MinedChain) -> None:
+    def add_chain(self, chain: MinedChain, received_at: Optional[str] = None) -> None:
         chain_id = str(uuid.uuid4())
-        self.r.set(f"{self.key_prefix}{chain_id}", chain.model_dump_json())
+        ts = received_at or datetime.now(timezone.utc).isoformat()
+        payload = {
+            "received_at": ts,
+            "chain": chain.model_dump(),
+        }
+        self.r.set(f"{self.key_prefix}{chain_id}", json.dumps(payload))
 
     def get_all_chains(self) -> List[MinedChain]:
+        return [entry.chain for entry in self.get_all_received()]
+
+    def get_all_received(self) -> List[ReceivedChain]:
         keys = self.r.keys(f"{self.key_prefix}*")
-        chains = []
+        chains: List[ReceivedChain] = []
         for key in keys:
             raw = self.r.get(key)
             if raw:
-                chains.append(MinedChain.model_validate(json.loads(raw)))
+                data = json.loads(raw)
+                if "chain" in data and "received_at" in data:
+                    chain = MinedChain.model_validate(data["chain"])
+                    chains.append(ReceivedChain(chain=chain, received_at=data["received_at"]))
+                else:
+                    # Compatibilidad con datos viejos guardados solo como MinedChain
+                    chain = MinedChain.model_validate(data)
+                    chains.append(
+                        ReceivedChain(
+                            chain=chain,
+                            received_at=datetime.now(timezone.utc).isoformat(),
+                        )
+                    )
         return chains
 
     def clear(self) -> None:

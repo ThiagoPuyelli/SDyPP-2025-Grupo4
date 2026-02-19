@@ -6,6 +6,7 @@ import state
 from log_config import logger
 from metrics import record_result, record_block_validation_duration
 from time import perf_counter
+from monotonic import mono_time
 
 router = APIRouter()
 
@@ -86,7 +87,10 @@ async def submit_result(chain: MinedChain):
             seen_txs.add(sig)
             record_block_validation_duration(prefix, "accepted", perf_counter() - block_started)
 
-        received_chains.add_chain(MinedChain(blocks=blocks))
+        received_chains.add_chain(
+            MinedChain(blocks=blocks),
+            received_at=mono_time.get_hora_actual().isoformat(),
+        )
         logger.info(f"Workload recibida: {blocks}")
         record_result("accepted")
         return {"status": "received"}
