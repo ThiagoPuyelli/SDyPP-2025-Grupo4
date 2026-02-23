@@ -20,6 +20,10 @@ class MinedBlock(BaseModel):
 class MinedChain(BaseModel):
     blocks: List[MinedBlock]
 
+class ReceivedChain(BaseModel):
+    chain: MinedChain
+    received_at: str
+
 class ActiveTransaction(BaseModel):
     transaction: Transaction
     ttl: int = 0
