@@ -124,10 +124,13 @@ async def submit_result(chain: MinedChain, miner_pk: str = Query(..., descriptio
         detail="Transaction not in available tasks"
     )
 
+MAX_RETRIES = 5
+RETRY_DELAY = 3
+
 ## pasamanos
 @router.get("/state")
 async def get_task():
-    while True:
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
             response = requests.get(
                 config.URI + '/state',
@@ -140,12 +143,20 @@ async def get_task():
         except requests.exceptions.RequestException as e:
             logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
 
-        time.sleep(3)
+        if attempt < MAX_RETRIES:
+            time.sleep(RETRY_DELAY)
+
+    logger.error(f"Fallaron los {MAX_RETRIES} intentos para obtener el estado del coordinador")
+
+    raise HTTPException(
+        status_code=503,
+        detail="No se pudo conectar con el coordinador luego de varios intentos"
+    )
 
 ## pasamanos
 @router.get("/block")
 def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
-    while True:
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
             response = requests.get(config.URI + '/block', params={"hash": hash}, timeout=5)
             if response.ok:
@@ -153,8 +164,21 @@ def get_block(hash: str = Query(..., description="Hash del bloque a buscar")):
                 r_mod["pool_id"] = config.POOL_ID
                 return r_mod
             else:
+                if response.status_code == 404:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="Bloque no encontrado"
+                    )
                 logger.info(f"Error HTTP {response.status_code}, reintentando...")
         except requests.exceptions.RequestException as e:
             logger.warning(f"Error en la conexión con el coordinador: {e}. Reintentando...")
 
-        time.sleep(3)
+        if attempt < MAX_RETRIES:
+            time.sleep(RETRY_DELAY)
+
+    logger.error(f"Fallaron los {MAX_RETRIES} intentos para obtener el bloque {hash}")
+
+    raise HTTPException(
+        status_code=503,
+        detail="No se pudo conectar con el coordinador luego de varios intentos"
+    )
