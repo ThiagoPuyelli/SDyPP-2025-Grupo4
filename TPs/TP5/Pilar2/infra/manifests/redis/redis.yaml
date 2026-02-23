@@ -29,7 +29,7 @@ spec:
         app: redis
     spec:
       nodeSelector:
-        cloud.google.com/gke-nodepool: infraestructura
+        cloud.google.com/gke-nodepool: blockchain
       containers:
         - name: redis
           image: redis:7

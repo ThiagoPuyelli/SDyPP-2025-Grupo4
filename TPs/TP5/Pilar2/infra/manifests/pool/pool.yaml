@@ -76,7 +76,7 @@ spec:
               mountPath: /vault/secrets
               readOnly: true
       nodeSelector:
-        role: infraestructura
+        role: blockchain
       volumes:
         - name: vault-config
           emptyDir: {}
