@@ -14,7 +14,7 @@ variable "credentials_file_path" {
 }
 
 variable "project_id" {
-  type    = string
+  type = string
 }
 
 variable "cluster_name" {
@@ -23,6 +23,6 @@ variable "cluster_name" {
 }
 
 variable "nginx_ip" {
-    type        = string
-    description = "IP estática del ingress nginx"
+  type        = string
+  description = "IP estática del ingress nginx"
 }

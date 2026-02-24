@@ -1,9 +1,12 @@
 # Vault en Kubernetes (namespace `secret`)
 
-Este flujo levanta un Vault dev dentro del cluster, carga los secretos definidos en un `.env` y prepara la autenticación vía Kubernetes para que los pods los lean.
+Este flujo levanta Vault en modo `server` (no dev), con almacenamiento persistente en PVC y auto-unseal con GCP KMS. También carga secretos desde `.env` y configura auth Kubernetes.
 
 ## Pasos rápidos
-1. Completar los secretos: copiar `TPs/TP5/Pilar2/infra/vault/.env.example` a `.env` y setear `RABBIT_USER`, `RABBIT_PASS`, `REDIS_DB`.
+1. Completar secretos y parámetros:
+   - Copiar `TPs/TP5/Pilar2/infra/vault/.env.example` a `.env`.
+   - Definir al menos: `RABBIT_USER`, `RABBIT_PASS`, `REDIS_DB`, `POOL_PK`.
+   - Si querés forzar KMS explícito: `GCP_PROJECT_ID`, `KMS_REGION`, `KMS_KEY_RING`, `KMS_CRYPTO_KEY`.
 2. Desplegar y cargar Vault (usa el `.env` anterior por defecto, podés pasar otro como primer argumento):
    ```bash
    TPs/TP5/Pilar2/infra/vault/deploy.sh
@@ -11,25 +14,30 @@ Este flujo levanta un Vault dev dentro del cluster, carga los secretos definidos
    TPs/TP5/Pilar2/infra/vault/deploy.sh /ruta/a/.env
    ```
    El script:
+   - Crea/reutiliza KeyRing y CryptoKey de Cloud KMS para auto-unseal.
+   - Otorga `roles/cloudkms.cryptoKeyEncrypterDecrypter` al service account de nodos (por default `kubernetes@<project>.iam.gserviceaccount.com`).
    - Crea el namespace `secret` y cuentas de servicio necesarias.
-   - Despliega Vault en modo dev (`VAULT_DEV_ROOT_TOKEN_ID=root`).
-   - Crea el Secret `vault-env` con los valores del `.env`.
-   - Ejecuta el Job `vault-bootstrap` que:
+   - Genera `ConfigMap/vault-config` con `server.hcl` (storage persistente + `seal "gcpckms"`).
+   - Despliega Vault como StatefulSet (`vault-0`) con PVC.
+   - Si Vault no estaba inicializado, corre `vault operator init` y guarda el token admin en `Secret/vault-admin`.
+   - Crea un Secret temporal `vault-env` desde `.env`.
+   - Ejecuta `Job/vault-bootstrap` que:
      - Habilita `kv-v2` en `secret/`.
-     - Configura auth Kubernetes con rol `blockchain-role` (service accounts `coordinador-sa` y `rabbitmq-sa` del namespace `blockchain`).
-     - Escribe `secret/blockchain` con los valores del `.env`.
+     - Configura auth Kubernetes con roles `blockchain-role` y `pool-role`.
+     - Escribe `secret/blockchain` y `secret/pool`.
+   - Elimina `vault-env` al final.
 3. Desplegar el resto de los manifests (después de que el Job termine):
    ```bash
    kubectl apply -f TPs/TP5/Pilar2/infra/manifests --recursive
    ```
 
 ## Detalles útiles
-- Vault queda accesible como `vault.secret.svc:8200` (sin TLS, solo para uso interno del cluster/demo).
-- Los secretos se guardan en `secret/data/blockchain` con las claves `RABBIT_USER`, `RABBIT_PASS`, `REDIS_DB`.
-- Si cambiás el `.env`, volvés a correr `deploy.sh`: recrea el Secret temporal y reejecuta el Job de bootstrap.
-- Para limpiar solo el bootstrap job y el Secret temporal:
+- Vault queda accesible como `vault.secret.svc:8200` (sin TLS, pensado para uso interno del cluster/laboratorio).
+- El estado de Vault persiste en el PVC del StatefulSet: un reinicio del pod no borra secretos.
+- El unseal es automático usando una CryptoKey de Cloud KMS (creada/reusada por `deploy.sh`).
+- Si cambiás secretos en `.env`, podés rerun `deploy.sh` para reescribirlos en Vault.
+- Para limpiar solo el bootstrap job:
   ```bash
   kubectl -n secret delete job vault-bootstrap
-  kubectl -n secret delete secret vault-env
   ```
-- No usar este setup en producción: usa Vault en modo dev y sin TLS para simplificar el laboratorio.
+- Si hacés `terraform destroy`, se borra el cluster y sus PVC. Después de recrear con `terraform apply`, `deploy-all.sh` vuelve a levantar todo y recarga secretos desde `.env`.

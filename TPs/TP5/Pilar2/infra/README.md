@@ -54,12 +54,13 @@ kubectl get nodes
 ```
 
 ### Configurar Vault y cargar secretos desde `.env`
-1. Crear el archivo `vault/.env` copiando `vault/.env.example` y completar `RABBIT_USER`, `RABBIT_PASS`, `REDIS_DB`.
+1. Crear el archivo `vault/.env` copiando `vault/.env.example` y completar al menos `RABBIT_USER`, `RABBIT_PASS`, `REDIS_DB`, `POOL_PK`.
 2. Desplegar Vault (namespace `secret`) y cargar los valores en `secret/data/blockchain`:
    ```
    ./vault/deploy.sh
    ```
    Podés pasar otro `.env` como primer argumento si no está en `vault/.env`.
+   El deploy de Vault usa modo `server` (no dev), estado persistente en PVC y auto-unseal con GCP KMS.
 3. Verificar que el Job de bootstrap terminó:
    ```
    kubectl -n secret get jobs
