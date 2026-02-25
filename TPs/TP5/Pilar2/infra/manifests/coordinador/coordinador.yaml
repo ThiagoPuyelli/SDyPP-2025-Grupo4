@@ -16,7 +16,7 @@ spec:
       serviceAccountName: coordinador-sa
       securityContext:
         runAsNonRoot: true
-        fsGroup: 2000
+        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       initContainers:
@@ -25,7 +25,8 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
-            runAsUser: 100
+            runAsUser: 1000
+            runAsGroup: 1000
             capabilities:
               drop:
                 - ALL
