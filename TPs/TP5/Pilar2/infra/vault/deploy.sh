@@ -83,6 +83,14 @@ gcloud iam service-accounts add-iam-policy-binding "${KMS_AUTH_SERVICE_ACCOUNT}"
   --member="serviceAccount:${GCP_PROJECT_ID}.svc.id.goog[${VAULT_K8S_NAMESPACE}/${VAULT_K8S_SERVICE_ACCOUNT}]" \
   --role="roles/iam.workloadIdentityUser" >/dev/null
 
+gcloud kms keys add-iam-policy-binding "${KMS_CRYPTO_KEY}" \
+  --keyring="${KMS_KEY_RING}" \
+  --location="${KMS_REGION}" \
+  --project="${GCP_PROJECT_ID}" \
+  --member="serviceAccount:${KMS_AUTH_SERVICE_ACCOUNT}" \
+  --role="roles/cloudkms.viewer" >/dev/null
+
+
 echo "Aplicando namespaces y cuentas de servicio..."
 kubectl apply -f "${MANIFEST_ROOT}/namespace-coordinador.yaml"
 kubectl apply -f "${MANIFEST_ROOT}/namespace-pool.yaml"
