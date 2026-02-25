@@ -37,6 +37,8 @@ KMS_REGION="${KMS_REGION:-us-east1}"
 KMS_KEY_RING="${KMS_KEY_RING:-vault-keyring}"
 KMS_CRYPTO_KEY="${KMS_CRYPTO_KEY:-vault-unseal-key}"
 KMS_AUTH_SERVICE_ACCOUNT="${KMS_AUTH_SERVICE_ACCOUNT:-kubernetes@${GCP_PROJECT_ID}.iam.gserviceaccount.com}"
+VAULT_K8S_NAMESPACE="${VAULT_K8S_NAMESPACE:-secret}"
+VAULT_K8S_SERVICE_ACCOUNT="${VAULT_K8S_SERVICE_ACCOUNT:-vault-server}"
 
 if [[ -z "${GCP_PROJECT_ID:-}" ]]; then
   echo "No se pudo inferir GCP_PROJECT_ID. Definilo en ${ENV_FILE}." >&2
@@ -74,6 +76,12 @@ gcloud kms keys add-iam-policy-binding "${KMS_CRYPTO_KEY}" \
   --project="${GCP_PROJECT_ID}" \
   --member="serviceAccount:${KMS_AUTH_SERVICE_ACCOUNT}" \
   --role="roles/cloudkms.cryptoKeyEncrypterDecrypter" >/dev/null
+
+echo "Configurando Workload Identity para Vault..."
+gcloud iam service-accounts add-iam-policy-binding "${KMS_AUTH_SERVICE_ACCOUNT}" \
+  --project="${GCP_PROJECT_ID}" \
+  --member="serviceAccount:${GCP_PROJECT_ID}.svc.id.goog[${VAULT_K8S_NAMESPACE}/${VAULT_K8S_SERVICE_ACCOUNT}]" \
+  --role="roles/iam.workloadIdentityUser" >/dev/null
 
 echo "Aplicando namespaces y cuentas de servicio..."
 kubectl apply -f "${MANIFEST_ROOT}/namespace-coordinador.yaml"
@@ -117,6 +125,8 @@ EOF
 
 echo "Desplegando Vault..."
 kubectl apply -f "${VAULT_MANIFESTS}/vault.yaml"
+kubectl -n "${VAULT_K8S_NAMESPACE}" annotate serviceaccount "${VAULT_K8S_SERVICE_ACCOUNT}" \
+  iam.gke.io/gcp-service-account="${KMS_AUTH_SERVICE_ACCOUNT}" --overwrite
 kubectl -n secret rollout status statefulset/vault --timeout=300s
 
 echo "Verificando estado de inicialización..."
@@ -136,20 +146,41 @@ fi
 
 if echo "${STATUS_JSON}" | grep -q '"initialized":[[:space:]]*false'; then
   echo "Vault no estaba inicializado. Ejecutando init..."
-  INIT_JSON="$(kubectl -n secret exec vault-0 -- sh -c 'VAULT_ADDR=http://127.0.0.1:8200 vault operator init -key-shares=1 -key-threshold=1 -format=json')"
+  SEAL_TYPE="$(echo "${STATUS_JSON}" | sed -n 's/.*"type"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  if [[ -z "${SEAL_TYPE}" ]]; then
+    echo "No se pudo detectar el tipo de seal de Vault." >&2
+    exit 1
+  fi
+
+  if [[ "${SEAL_TYPE}" == "shamir" ]]; then
+    INIT_ARGS="-key-shares=1 -key-threshold=1"
+  else
+    INIT_ARGS="-recovery-shares=1 -recovery-threshold=1"
+  fi
+
+  INIT_JSON="$(kubectl -n secret exec vault-0 -- sh -c "VAULT_ADDR=http://127.0.0.1:8200 vault operator init ${INIT_ARGS} -format=json")"
   INIT_JSON_SINGLE_LINE="$(echo "${INIT_JSON}" | tr -d '\n')"
   ROOT_TOKEN="$(echo "${INIT_JSON_SINGLE_LINE}" | sed -n 's/.*"root_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
   RECOVERY_KEY="$(echo "${INIT_JSON_SINGLE_LINE}" | sed -n 's/.*"recovery_keys_b64"[[:space:]]*:[[:space:]]*\["\([^"]*\)".*/\1/p')"
+  if [[ -z "${RECOVERY_KEY}" ]]; then
+    RECOVERY_KEY="$(echo "${INIT_JSON_SINGLE_LINE}" | sed -n 's/.*"unseal_keys_b64"[[:space:]]*:[[:space:]]*\["\([^"]*\)".*/\1/p')"
+  fi
 
   if [[ -z "${ROOT_TOKEN}" ]]; then
     echo "No se pudo extraer el root token del init de Vault." >&2
     exit 1
   fi
 
-  kubectl -n secret create secret generic vault-admin \
-    --from-literal=token="${ROOT_TOKEN}" \
-    --from-literal=recovery_key="${RECOVERY_KEY}" \
-    --dry-run=client -o yaml | kubectl apply -f -
+  if [[ -n "${RECOVERY_KEY}" ]]; then
+    kubectl -n secret create secret generic vault-admin \
+      --from-literal=token="${ROOT_TOKEN}" \
+      --from-literal=recovery_key="${RECOVERY_KEY}" \
+      --dry-run=client -o yaml | kubectl apply -f -
+  else
+    kubectl -n secret create secret generic vault-admin \
+      --from-literal=token="${ROOT_TOKEN}" \
+      --dry-run=client -o yaml | kubectl apply -f -
+  fi
 
   echo "Vault inicializado. Token admin guardado en secret/vault-admin."
 else

@@ -4,12 +4,12 @@ metadata:
   name: vault-bootstrap
   namespace: secret
 spec:
-  backoffLimit: 3
+  backoffLimit: 0
   ttlSecondsAfterFinished: 600
   template:
     spec:
       serviceAccountName: vault-auth
-      restartPolicy: OnFailure
+      restartPolicy: Never
       containers:
         - name: vault-bootstrap
           image: hashicorp/vault:1.15.4
@@ -30,15 +30,25 @@ spec:
             - |
               set -euo pipefail
 
-              echo "Esperando a que Vault esté listo..."
-              for i in $(seq 1 90); do
-                if vault status >/dev/null 2>&1; then
+              echo "Esperando a que Vault esté inicializado y desellado..."
+              READY=0
+              STATUS_JSON=""
+              for i in $(seq 1 120); do
+                STATUS_JSON="$(vault status -format=json 2>/dev/null || true)"
+                if echo "${STATUS_JSON}" | grep -q '"initialized":[[:space:]]*true' && \
+                   echo "${STATUS_JSON}" | grep -q '"sealed":[[:space:]]*false'; then
+                  READY=1
                   break
                 fi
                 sleep 2
               done
 
-              STATUS_JSON="$(vault status -format=json || true)"
+              if [ "${READY}" -ne 1 ]; then
+                echo "Vault no llegó al estado initialized=true y sealed=false."
+                echo "${STATUS_JSON}"
+                exit 1
+              fi
+
               if echo "${STATUS_JSON}" | grep -q '"initialized":[[:space:]]*false'; then
                 echo "Vault todavía no está inicializado."
                 exit 1
@@ -50,7 +60,8 @@ spec:
               fi
 
               for required_var in RABBIT_USER RABBIT_PASS REDIS_DB POOL_PK; do
-                if [ -z "${!required_var:-}" ]; then
+                required_val="$(eval "printf '%s' \"\${${required_var}:-}\"")"
+                if [ -z "${required_val}" ]; then
                   echo "Falta la variable requerida ${required_var} en vault-env."
                   exit 1
                 fi
