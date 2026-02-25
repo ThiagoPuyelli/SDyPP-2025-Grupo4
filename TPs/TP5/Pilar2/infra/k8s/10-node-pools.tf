@@ -41,7 +41,7 @@ resource "google_container_node_pool" "blockchain" {
 
   autoscaling {
     min_node_count = 1
-    max_node_count = 2
+    max_node_count = 4
   }
 
   node_config {
@@ -72,7 +72,7 @@ resource "google_container_node_pool" "infraestructura" {
 
   autoscaling {
     min_node_count = 1
-    max_node_count = 2
+    max_node_count = 3
   }
 
   node_config {
