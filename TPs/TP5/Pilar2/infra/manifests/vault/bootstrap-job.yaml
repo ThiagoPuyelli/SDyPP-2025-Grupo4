@@ -10,9 +10,19 @@ spec:
     spec:
       serviceAccountName: vault-auth
       restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 100
+        fsGroup: 100
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: vault-bootstrap
           image: hashicorp/vault:1.15.4
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
           env:
             - name: VAULT_ADDR
               value: http://vault.secret.svc:8200

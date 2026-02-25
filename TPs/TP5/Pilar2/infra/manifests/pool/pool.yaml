@@ -14,9 +14,31 @@ spec:
         app: pool
     spec:
       serviceAccountName: pool-sa
+      nodeSelector:
+        role: blockchain
+      # Pod-level security
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: vault-config
+          emptyDir:
+            medium: Memory
+        - name: vault-secrets
+          emptyDir:
+            medium: Memory
       initContainers:
         - name: vault-agent-init
           image: hashicorp/vault:1.15.4
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 100
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: VAULT_ADDR
               value: http://vault.secret.svc:8200
@@ -58,6 +80,15 @@ spec:
       containers:
         - name: pool
           image: matiasherrneder/blockchain-pool:624d694
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 8000
           command:
@@ -82,13 +113,6 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
-      nodeSelector:
-        role: blockchain
-      volumes:
-        - name: vault-config
-          emptyDir: {}
-        - name: vault-secrets
-          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

@@ -4,16 +4,13 @@ metadata:
   name: frontend
   namespace: frontend
 spec:
-  replicas: 1
-  template:
-    spec:
-      nodeSelector:
-        role: blockchain
+  type: ClusterIP
   selector:
     app: frontend
   ports:
-    - port: 80
-      targetPort: 80
+    - name: http
+      port: 80
+      targetPort: 8080
 ---
 
 apiVersion: apps/v1
@@ -31,11 +28,40 @@ spec:
       labels:
         app: frontend
     spec:
+      nodeSelector:
+        role: blockchain
+      # Pod-level security
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: nginx-cache
+          emptyDir:
+            medium: Memory
+        - name: nginx-run
+          emptyDir:
+            medium: Memory
       containers:
         - name: frontend
           image: matiasherrneder/blockchain-frontend:1cf2b00
+          # Container-level security
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            capabilities:
+              drop:
+                - ALL
           ports:
-            - containerPort: 80
+            - containerPort: 8080
+          volumeMounts:
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
           resources:
             requests:
               cpu: 50m

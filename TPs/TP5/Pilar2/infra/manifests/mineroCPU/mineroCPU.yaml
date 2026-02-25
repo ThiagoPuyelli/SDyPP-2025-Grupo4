@@ -4,7 +4,7 @@ metadata:
   name: minero
   namespace: blockchain
 spec:
-  # replicas: 1
+  replicas: 1
   selector:
     matchLabels:
       app: minero
@@ -13,9 +13,26 @@ spec:
       labels:
         app: minero
     spec:
+      nodeSelector:
+        role: mineros
+      # Pod-level security
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: minero
           image: matiasherrneder/blockchain-minero:052d4dc
+          # Container-level security
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop:
+                - ALL
           envFrom:
             - configMapRef:
                 name: miner-config
@@ -26,8 +43,6 @@ spec:
             limits:
               cpu: 500m
               memory: 256Mi
-      nodeSelector:
-        role: mineros
 # ---
 # apiVersion: autoscaling/v2
 # kind: HorizontalPodAutoscaler

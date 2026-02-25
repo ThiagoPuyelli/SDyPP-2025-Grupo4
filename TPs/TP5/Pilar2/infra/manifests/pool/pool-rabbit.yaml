@@ -102,12 +102,19 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      securityContext:
+        fsGroup: 999
       nodeSelector:
         cloud.google.com/gke-nodepool: infraestructura
       containers:
         - name: rabbitmq
           image: rabbitmq:3-management
-
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
           ports:
             - containerPort: 5672
               name: amqp
