@@ -103,7 +103,7 @@ spec:
               echo "Redis disponible"
       containers:
         - name: coordinador
-          image: matiasherrneder/blockchain-coordinador:faf946c
+          image: matiasherrneder/blockchain-coordinador:7e8957e
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
