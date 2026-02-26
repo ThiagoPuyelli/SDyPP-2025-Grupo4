@@ -22,7 +22,7 @@ redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"),
     port=int(os.getenv("REDIS_PORT", 6379)),
     db=int(get_secret("REDIS_DB", "0")),
-    password=os.getenv("REDIS_PASSWORD"),
+    password=get_secret("REDIS_PASSWORD"),
     decode_responses=True,
     retry_on_error=[ConnectionError],
     retry=Retry(ExponentialBackoff(), retries=10)

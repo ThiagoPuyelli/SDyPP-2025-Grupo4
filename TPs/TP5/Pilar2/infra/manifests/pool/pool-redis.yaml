@@ -28,6 +28,7 @@ spec:
       labels:
         app: redis
     spec:
+      serviceAccountName: pool-sa
       nodeSelector:
         cloud.google.com/gke-nodepool: blockchain
       # Pod-level security
@@ -36,6 +37,62 @@ spec:
         fsGroup: 1001
         seccompProfile:
           type: RuntimeDefault
+      volumes:
+        - name: vault-config
+          emptyDir:
+            medium: Memory
+        - name: vault-secrets
+          emptyDir:
+            medium: Memory
+      initContainers:
+        - name: vault-agent-init
+          image: hashicorp/vault:1.15.4
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 100
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: VAULT_ADDR
+              value: http://vault.secret.svc:8200
+          volumeMounts:
+            - name: vault-config
+              mountPath: /vault/config
+            - name: vault-secrets
+              mountPath: /vault/secrets
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              cat > /vault/config/agent.hcl <<'EOF'
+              exit_after_auth = true
+              pid_file = "/tmp/vault-agent.pid"
+
+              auto_auth {
+                method "kubernetes" {
+                  mount_path = "auth/kubernetes"
+                  config = {
+                    role = "pool-role"
+                  }
+                }
+                sink "file" {
+                  config = {
+                    path = "/vault/secrets/.token"
+                  }
+                }
+              }
+
+              template {
+                destination = "/vault/secrets/REDIS_PASSWORD"
+                contents = "{{- with secret \"secret/data/pool\" -}}{{ .Data.data.REDIS_PASSWORD }}{{- end }}"
+              }
+              EOF
+
+              /bin/vault agent -config=/vault/config/agent.hcl -log-level=info
       containers:
         - name: redis
           image: redis:7
@@ -47,12 +104,22 @@ spec:
             capabilities:
               drop:
                 - ALL
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              export REDIS_PASSWORD="$(cat /vault/secrets/REDIS_PASSWORD)"
+              exec redis-server --appendonly yes --requirepass "${REDIS_PASSWORD}"
           ports:
             - containerPort: 6379
               name: redis
           volumeMounts:
             - name: redis-data
               mountPath: /data
+            - name: vault-secrets
+              mountPath: /vault/secrets
+              readOnly: true
           resources:
             requests:
               cpu: "100m"

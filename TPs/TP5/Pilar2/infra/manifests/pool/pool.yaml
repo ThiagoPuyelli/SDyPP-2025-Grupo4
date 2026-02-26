@@ -74,6 +74,11 @@ spec:
                 destination = "/vault/secrets/POOL_PK"
                 contents = "{{- with secret \"secret/data/pool\" -}}{{ .Data.data.POOL_PK }}{{- end }}"
               }
+
+              template {
+                destination = "/vault/secrets/REDIS_PASSWORD"
+                contents = "{{- with secret \"secret/data/pool\" -}}{{ .Data.data.REDIS_PASSWORD }}{{- end }}"
+              }
               EOF
 
               /bin/vault agent -config=/vault/config/agent.hcl -log-level=info
@@ -102,6 +107,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: pool-config
+          env:
+            - name: REDIS_PASSWORD_FILE
+              value: /vault/secrets/REDIS_PASSWORD
           volumeMounts:
             - name: vault-secrets
               mountPath: /vault/secrets

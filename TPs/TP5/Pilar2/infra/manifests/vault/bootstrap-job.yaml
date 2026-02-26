@@ -69,7 +69,7 @@ spec:
                 exit 1
               fi
 
-              for required_var in RABBIT_USER RABBIT_PASS REDIS_DB POOL_PK; do
+              for required_var in RABBIT_USER RABBIT_PASS REDIS_DB REDIS_PASSWORD POOL_PK; do
                 required_val="$(eval "printf '%s' \"\${${required_var}:-}\"")"
                 if [ -z "${required_val}" ]; then
                   echo "Falta la variable requerida ${required_var} en vault-env."
@@ -124,11 +124,13 @@ spec:
                 RABBIT_USER="${RABBIT_USER}" \
                 RABBIT_PASS="${RABBIT_PASS}" \
                 REDIS_DB="${REDIS_DB}" \
+                REDIS_PASSWORD="${REDIS_PASSWORD}" \
                 GRAFANA_USER="${GRAFANA_USER:-admin}" \
                 GRAFANA_PASS="${GRAFANA_PASS:-admin}"
 
               POOL_PK_NORMALIZED="$(printf '%b' "${POOL_PK}")"
               vault kv put secret/pool \
-                POOL_PK="${POOL_PK_NORMALIZED}"
+                POOL_PK="${POOL_PK_NORMALIZED}" \
+                REDIS_PASSWORD="${REDIS_PASSWORD}"
 
               echo "Bootstrap de Vault terminado."
