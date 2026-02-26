@@ -254,4 +254,60 @@ def minar_y_enviar(data):
             logger.info("Share minado ✅, continuando minado...")
             trabajo["nonce_start"] = bloque.nonce + 1
 
-iniciar()
+# iniciar()
+def test(
+    cantidad_transacciones,
+    prefix,
+):
+    """
+    Ejecuta minar() con datos de prueba y mide cuánto tarda.
+    """
+
+    # Evento para detener minería (no lo activamos)
+    detener_mineria = threading.Event()
+
+    # Generamos transacciones dummy
+    transactions = []
+
+    for i in range(cantidad_transacciones):
+        transactions.append({
+            "source": f"user_{i}",
+            "target": f"user_{i+1}",
+            "amount": 10,
+            "timestamp": "str",
+            "sign": "0"
+        })
+
+    data = {
+        "transaction": transactions,
+        "previous_hash": "0" * 32,
+        "target_prefix": prefix,
+    }
+
+    print("⛏️  Iniciando prueba de minería...")
+    start = time.perf_counter()
+
+    minar(data, detener_mineria)
+
+    end = time.perf_counter()
+    duracion = end - start
+
+    print("=====================================")
+    print(f"Transacciones: {cantidad_transacciones}")
+    print(f"Prefijo objetivo: {prefix}")
+    print(f"Tiempo total: {duracion:.4f} segundos")
+    print("=====================================")
+
+    return duracion
+    
+
+test(1, "0")
+test(1, "00")
+test(1, "000")
+test(1, "0000")
+test(1, "00000")
+test(1, "000000")
+test(1, "0000000")
+test(1, "00000000")
+test(1, "000000000")
+test(1, "0000000000")
