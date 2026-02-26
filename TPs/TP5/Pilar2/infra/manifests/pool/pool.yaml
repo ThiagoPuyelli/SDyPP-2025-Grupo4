@@ -31,7 +31,7 @@ spec:
             medium: Memory
       initContainers:
         - name: vault-agent-init
-          image: hashicorp/vault:1.15.4
+          image: matiasherrneder/blockchain-pool:7e8957e
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
@@ -84,7 +84,7 @@ spec:
               /bin/vault agent -config=/vault/config/agent.hcl -log-level=info
       containers:
         - name: pool
-          image: matiasherrneder/blockchain-pool:624d694
+          image: matiasherrneder/blockchain-pool:7e8957e
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
