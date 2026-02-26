@@ -104,7 +104,8 @@ spec:
               vault auth enable kubernetes >/dev/null 2>&1 || true
               vault write auth/kubernetes/config \
                 kubernetes_host="https://${KUBERNETES_SERVICE_HOST}:443" \
-                kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                disable_local_ca_jwt="false"
 
               vault write auth/kubernetes/role/blockchain-role \
                 bound_service_account_names="coordinador-sa,rabbitmq-sa" \
