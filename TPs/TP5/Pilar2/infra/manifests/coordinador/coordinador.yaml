@@ -75,6 +75,11 @@ spec:
                 destination = "/vault/secrets/REDIS_DB"
                 contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.REDIS_DB }}{{- end }}"
               }
+
+              template {
+                destination = "/vault/secrets/REDIS_PASSWORD"
+                contents = "{{- with secret \"secret/data/blockchain\" -}}{{ .Data.data.REDIS_PASSWORD }}{{- end }}"
+              }
               EOF
 
               vault agent -config=/vault/config/agent.hcl -log-level=info
@@ -98,7 +103,7 @@ spec:
               echo "Redis disponible"
       containers:
         - name: coordinador
-          image: matiasherrneder/blockchain-coordinador:faf946c
+          image: matiasherrneder/blockchain-coordinador:7e8957e
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -120,6 +125,8 @@ spec:
               value: /vault/secrets/RABBIT_USER
             - name: REDIS_DB_FILE
               value: /vault/secrets/REDIS_DB
+            - name: REDIS_PASSWORD_FILE
+              value: /vault/secrets/REDIS_PASSWORD
           volumeMounts:
             - name: vault-secrets
               mountPath: /vault/secrets

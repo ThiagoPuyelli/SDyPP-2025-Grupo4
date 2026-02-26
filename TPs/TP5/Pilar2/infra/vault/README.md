@@ -5,7 +5,7 @@ Este flujo levanta Vault en modo `server` (no dev), con almacenamiento persisten
 ## Pasos rápidos
 1. Completar secretos y parámetros:
    - Copiar `TPs/TP5/Pilar2/infra/vault/.env.example` a `.env`.
-   - Definir al menos: `RABBIT_USER`, `RABBIT_PASS`, `REDIS_DB`, `POOL_PK`.
+   - Definir al menos: `RABBIT_USER`, `RABBIT_PASS`, `REDIS_DB`, `REDIS_PASSWORD`, `POOL_PK`.
    - Si querés forzar KMS explícito: `GCP_PROJECT_ID`, `KMS_REGION`, `KMS_KEY_RING`, `KMS_CRYPTO_KEY`.
 2. Desplegar y cargar Vault (usa el `.env` anterior por defecto, podés pasar otro como primer argumento):
    ```bash

@@ -1,5 +1,6 @@
 from enum import Enum
 from models import MinedChain
+from services.secret_service import get_secret
 from services.subscribers import RedisSubscribers
 from fastapi import WebSocket
 from prize_handler import PrizeHandler
@@ -31,9 +32,8 @@ nonce_start = 0
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"),
     port=int(os.getenv("REDIS_PORT", 6379)),
-    # db=int(get_secret("REDIS_DB", "0")),
-    db=int(os.getenv("REDIS_DB", "0")),
-    password=os.getenv("REDIS_PASSWORD"),
+    db=int(get_secret("REDIS_DB", "0")),
+    password=get_secret("REDIS_PASSWORD"),
     decode_responses=True,
 )
 

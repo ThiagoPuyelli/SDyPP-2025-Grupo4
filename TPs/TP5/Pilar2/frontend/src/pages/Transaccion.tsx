@@ -1,6 +1,22 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { signMessage } from "../utils/crypto";
 import { Modal } from "../components/Modal";
+
+type TransactionPayload = {
+    source: string;
+    target: string;
+    amount: number;
+    timestamp: string;
+    sign: string;
+};
+
+type PublishProgress = {
+    sent: number;
+    total: number;
+};
+
+const TRANSACTION_URL = "https://blockchain.34.23.224.114.nip.io/tasks";
+const REQUEST_TIMEOUT_MS = 5000;
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
@@ -11,23 +27,107 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     );
 }
 
+function parsePositiveNumber(rawValue: string, fieldName: string): number {
+    const normalized = rawValue.trim().replace(",", ".");
+    const parsed = Number(normalized);
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        throw new Error(`${fieldName} debe ser un número positivo`);
+    }
+
+    return parsed;
+}
+
+function parseNonNegativeNumber(rawValue: string, fieldName: string): number {
+    const normalized = rawValue.trim().replace(",", ".");
+    const parsed = Number(normalized);
+
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        throw new Error(`${fieldName} debe ser un número mayor o igual a 0`);
+    }
+
+    return parsed;
+}
+
+function parsePositiveInteger(rawValue: string, fieldName: string): number {
+    const parsed = Number(rawValue);
+
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+        throw new Error(`${fieldName} debe ser un entero positivo`);
+    }
+
+    return parsed;
+}
+
+function formatAmountForSignature(amount: number): string {
+    const raw = amount.toString().toLowerCase();
+
+    if (!raw.includes("e")) {
+        return Number.isInteger(amount) ? `${raw}.0` : raw;
+    }
+
+    const [mantissa, exponent] = raw.split("e");
+    const sign = exponent.startsWith("-") ? "-" : "+";
+    const digits = exponent.replace(/^[-+]/, "").padStart(2, "0");
+
+    return `${mantissa}e${sign}${digits}`;
+}
+
+function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
 export default function Transaccion() {
     const [source, setSource] = useState("");
     const [target, setTarget] = useState("");
     const [amount, setAmount] = useState("");
     const [privateKey, setPrivateKey] = useState("");
-    const [result, setResult] = useState<any>(null);
-    const [error, setError] = useState<string | null>(null);
 
-    const [publishing, setPublishing] = useState(false);
+    const [txCount, setTxCount] = useState("1");
+    const [timestampStepSeconds, setTimestampStepSeconds] = useState("1");
+    const [sendIntervalMs, setSendIntervalMs] = useState("0");
+    const [startTimestamp, setStartTimestamp] = useState("");
+
+    const [generatedTransactions, setGeneratedTransactions] = useState<TransactionPayload[]>([]);
+    const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    async function publishTransaction(tx: any) {
+    const [publishing, setPublishing] = useState(false);
+    const [publishProgress, setPublishProgress] = useState<PublishProgress | null>(null);
+
+    const generateButtonLabel = useMemo(() => {
+        const count = Number(txCount);
+        return Number.isInteger(count) && count > 1
+            ? "Generar lote de transacciones"
+            : "Generar transacción";
+    }, [txCount]);
+
+    const resultPreview = useMemo(() => {
+        if (generatedTransactions.length === 0) {
+            return null;
+        }
+
+        if (generatedTransactions.length === 1) {
+            return generatedTransactions[0];
+        }
+
+        return {
+            cantidad: generatedTransactions.length,
+            incremento_timestamp_segundos: timestampStepSeconds,
+            intervalo_envio_ms: sendIntervalMs,
+            primer_payload: generatedTransactions[0],
+            ultimo_payload: generatedTransactions[generatedTransactions.length - 1],
+        };
+    }, [generatedTransactions, sendIntervalMs, timestampStepSeconds]);
+
+    async function publishTransaction(tx: TransactionPayload) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
         try {
-            const response = await fetch("https://blockchain.34.23.224.114.nip.io/tasks", {
+            const response = await fetch(TRANSACTION_URL, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -35,9 +135,20 @@ export default function Transaccion() {
                 body: JSON.stringify(tx),
                 signal: controller.signal,
             });
+
             if (!response.ok) {
-                const b = await response.json()
-                throw new Error(`HTTP ${response.status} - ${b.detail}`);
+                let detail = `HTTP ${response.status}`;
+
+                try {
+                    const body = (await response.json()) as { detail?: string };
+                    if (body?.detail) {
+                        detail = `HTTP ${response.status} - ${body.detail}`;
+                    }
+                } catch {
+                    // Si no hay JSON de error, devolvemos solo el código HTTP.
+                }
+
+                throw new Error(detail);
             }
         } finally {
             clearTimeout(timeoutId);
@@ -47,24 +158,53 @@ export default function Transaccion() {
     async function handleGenerate() {
         try {
             setError(null);
+            setSuccess(null);
 
-            const amountStr = Number(amount).toFixed(1);
-            const timestamp = new Date().toISOString();
+            const sourceClean = source.trim();
+            const targetClean = target.trim();
+            const privateKeyClean = privateKey.trim();
 
-            const message = `${source}|${target}|${amountStr}|${timestamp}`;
+            if (!sourceClean || !targetClean || !privateKeyClean) {
+                throw new Error("Completá source, target y private key");
+            }
 
-            const signature = await signMessage(privateKey, message);
+            if (sourceClean === targetClean) {
+                throw new Error("Source y target no pueden ser iguales");
+            }
 
-            setResult({
-                source,
-                target,
-                amount: amountStr,
-                timestamp,
-                sign: signature,
-            });
+            const amountNumber = parsePositiveNumber(amount, "La cantidad por transacción");
+            const amountForSignature = formatAmountForSignature(amountNumber);
+            const quantity = parsePositiveInteger(txCount, "La cantidad de transacciones");
+            const stepSeconds = parseNonNegativeNumber(
+                timestampStepSeconds,
+                "El incremento de timestamp"
+            );
+
+            const baseDate = startTimestamp ? new Date(startTimestamp) : new Date();
+            if (Number.isNaN(baseDate.getTime())) {
+                throw new Error("El timestamp inicial es inválido");
+            }
+
+            const transactions: TransactionPayload[] = [];
+            for (let i = 0; i < quantity; i++) {
+                const txDate = new Date(baseDate.getTime() + i * stepSeconds * 1000);
+                const timestamp = txDate.toISOString();
+                const message = `${sourceClean}|${targetClean}|${amountForSignature}|${timestamp}`;
+                const signature = await signMessage(privateKeyClean, message);
+
+                transactions.push({
+                    source: sourceClean,
+                    target: targetClean,
+                    amount: amountNumber,
+                    timestamp,
+                    sign: signature,
+                });
+            }
+
+            setGeneratedTransactions(transactions);
         } catch (e) {
             if (e instanceof Error && e.message) {
-                setError(`Error: ${e.message}`);
+                setError(`Error generando transacción: ${e.message}`);
             } else {
                 setError("Error generando transacción");
             }
@@ -72,25 +212,51 @@ export default function Transaccion() {
     }
 
     async function handlePublish() {
-        if (!result) return;
+        if (generatedTransactions.length === 0) {
+            return;
+        }
+
+        let sentCount = 0;
 
         try {
+            const intervalMs = parseNonNegativeNumber(sendIntervalMs, "El intervalo de envío");
+
             setError(null);
+            setSuccess(null);
             setPublishing(true);
+            setPublishProgress({ sent: 0, total: generatedTransactions.length });
 
-            await publishTransaction(result);
+            const txs = [...generatedTransactions];
 
-            setResult(null);
-            setSuccess("La transacción fue publicada correctamente");
+            for (const [index, tx] of txs.entries()) {
+                await publishTransaction(tx);
+                sentCount = index + 1;
+                setPublishProgress({ sent: sentCount, total: txs.length });
+
+                if (index < txs.length - 1 && intervalMs > 0) {
+                    await delay(intervalMs);
+                }
+            }
+
+            setGeneratedTransactions([]);
+            setSuccess(
+                txs.length === 1
+                    ? "La transacción fue publicada correctamente"
+                    : `Se publicaron ${txs.length} transacciones correctamente`
+            );
         } catch (e) {
-            setResult(null);
             if (e instanceof Error && e.message) {
-                setError(`Error publicando transacción: ${e.message}`);
+                setError(
+                    `Error publicando transacciones (${sentCount}/${generatedTransactions.length} enviadas): ${e.message}`
+                );
             } else {
-                setError("Error publicando transacción");
+                setError(
+                    `Error publicando transacciones (${sentCount}/${generatedTransactions.length} enviadas)`
+                );
             }
         } finally {
             setPublishing(false);
+            setPublishProgress(null);
         }
     }
 
@@ -114,13 +280,54 @@ export default function Transaccion() {
                 />
             </Field>
 
-            <Field label="Cantidad">
+            <Field label="Cantidad por transacción (ej: 0.02 o 0,02)">
+                <input
+                    style={inputBase}
+                    type="text"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                />
+            </Field>
+
+            <Field label="Cantidad de transacciones">
                 <input
                     style={inputBase}
                     type="number"
-                    step="0.0001"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    min={1}
+                    step={1}
+                    value={txCount}
+                    onChange={(e) => setTxCount(e.target.value)}
+                />
+            </Field>
+
+            <Field label="Incremento de timestamp por tx (segundos)">
+                <input
+                    style={inputBase}
+                    type="number"
+                    min={0}
+                    step={0.1}
+                    value={timestampStepSeconds}
+                    onChange={(e) => setTimestampStepSeconds(e.target.value)}
+                />
+            </Field>
+
+            <Field label="Intervalo de envío entre tx (ms)">
+                <input
+                    style={inputBase}
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={sendIntervalMs}
+                    onChange={(e) => setSendIntervalMs(e.target.value)}
+                />
+            </Field>
+
+            <Field label="Timestamp inicial (opcional)">
+                <input
+                    style={inputBase}
+                    type="datetime-local"
+                    value={startTimestamp}
+                    onChange={(e) => setStartTimestamp(e.target.value)}
                 />
             </Field>
 
@@ -132,64 +339,58 @@ export default function Transaccion() {
                 />
             </Field>
 
-            <button style={styles.button} onClick={handleGenerate}>
-                Generar transacción
+            <button style={styles.button} onClick={handleGenerate} disabled={publishing}>
+                {generateButtonLabel}
             </button>
 
             {error && (
                 <Modal
-                    title="Error al generar transacción"
+                    title="Error"
                     message={error}
                     variant="error"
                     onClose={() => setError(null)}
                 />
             )}
 
-            {/* {result && (
-                <div style={styles.result}>
-                    <div style={styles.resultTitle}>Payload generado</div>
-                    <pre style={styles.pre}>
-                        {JSON.stringify(result, null, 2)}
-                    </pre>
-                </div>
-            )} */}
-            {result && (
+            {generatedTransactions.length > 0 && resultPreview && (
                 <Modal
-                    title="Transacción generada"
-                    variant="success"
-                    message={
-                        <pre style={{ margin: 0 }}>
-                            {JSON.stringify(result, null, 2)}
-                        </pre>
+                    title={
+                        generatedTransactions.length === 1
+                            ? "Transacción generada"
+                            : "Lote de transacciones generado"
                     }
-                    onClose={() => setResult(null)}
+                    variant="success"
+                    message={<pre style={{ margin: 0 }}>{JSON.stringify(resultPreview, null, 2)}</pre>}
+                    onClose={() => setGeneratedTransactions([])}
                     actions={
-                        <>
-                            <button
-    style={{
-        ...styles.primaryButton,
-        opacity: publishing ? 0.7 : 1,
-        cursor: publishing ? "not-allowed" : "pointer",
-    }}
-    disabled={publishing}
-    onClick={handlePublish}
->
-    {publishing ? "Publicando..." : "Publicar"}
-</button>
-                        </>
+                        <button
+                            style={{
+                                ...styles.primaryButton,
+                                opacity: publishing ? 0.7 : 1,
+                                cursor: publishing ? "not-allowed" : "pointer",
+                            }}
+                            disabled={publishing}
+                            onClick={handlePublish}
+                        >
+                            {publishing
+                                ? `Publicando ${publishProgress?.sent ?? 0}/${publishProgress?.total ?? generatedTransactions.length}...`
+                                : generatedTransactions.length === 1
+                                    ? "Publicar"
+                                    : `Publicar lote (${generatedTransactions.length})`}
+                        </button>
                     }
                 />
             )}
+
             {success && (
-    <Modal
-        title="Éxito"
-        variant="success"
-        message={success}
-        onClose={() => setSuccess(null)}
-    />
-)}
+                <Modal
+                    title="Éxito"
+                    variant="success"
+                    message={success}
+                    onClose={() => setSuccess(null)}
+                />
+            )}
         </div>
-        
     );
 }
 
@@ -202,12 +403,6 @@ const styles: Record<string, React.CSSProperties> = {
     title: {
         fontSize: 24,
         marginBottom: 24,
-    },
-    sections: {
-        display: "flex",
-        gap: 16,
-        flexWrap: "wrap",
-        alignItems: "flex-start",
     },
     field: {
         display: "flex",
@@ -231,25 +426,6 @@ const styles: Record<string, React.CSSProperties> = {
         border: "1px solid #d1d5db",
         backgroundColor: "#f9fafb",
         cursor: "pointer",
-    },
-    result: {
-        marginTop: 24,
-        padding: 12,
-        border: "1px solid #e5e7eb",
-        borderRadius: 8,
-        backgroundColor: "#f9fafb",
-    },
-    resultTitle: {
-        fontSize: 13,
-        fontWeight: 600,
-        marginBottom: 8,
-    },
-    pre: {
-        fontSize: 12,
-        backgroundColor: "#ffffff",
-        padding: 12,
-        borderRadius: 6,
-        overflowX: "auto",
     },
     primaryButton: {
         padding: "6px 12px",

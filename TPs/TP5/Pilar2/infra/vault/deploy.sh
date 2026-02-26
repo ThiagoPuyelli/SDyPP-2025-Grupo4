@@ -18,7 +18,7 @@ set -a
 source "${ENV_FILE}"
 set +a
 
-required_env_vars=("RABBIT_USER" "RABBIT_PASS" "REDIS_DB" "POOL_PK")
+required_env_vars=("RABBIT_USER" "RABBIT_PASS" "REDIS_DB" "REDIS_PASSWORD" "POOL_PK")
 for required_var in "${required_env_vars[@]}"; do
   if [[ -z "${!required_var:-}" ]]; then
     echo "La variable ${required_var} es obligatoria en ${ENV_FILE}." >&2
