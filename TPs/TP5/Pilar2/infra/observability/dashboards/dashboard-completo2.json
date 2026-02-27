@@ -35,7 +35,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "",
+            "axisLabel": "MiB",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -87,7 +87,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 24,
+      "id": 27,
       "options": {
         "legend": {
           "calcs": [],
@@ -107,14 +107,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "(\n  coordinador_pending_queue_size{job=\"coordinador\"}\n  +\n  coordinador_active_queue_size{job=\"coordinador\"}\n)\n/\nclamp_min(mining_workers_desired{job=\"coordinador\"}, 1)\n",
+          "expr": "container_memory_working_set_bytes{\n  namespace=\"blockchain\",\n  pod=~\"coordinador-.*\",\n  container=\"coordinador\",\n  image!=\"\"\n} / 1024 / 1024\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Presión por worker deseado",
+      "title": "Memoria usada por el coordinador",
       "type": "timeseries"
     },
     {
@@ -279,7 +279,7 @@
         "x": 0,
         "y": 8
       },
-      "id": 23,
+      "id": 26,
       "options": {
         "legend": {
           "calcs": [],
@@ -299,14 +299,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "mining_workers_desired{job=\"coordinador\"}\n",
+          "expr": "1000 * sum by (pod) (\n  rate(container_cpu_usage_seconds_total{\n    namespace=\"blockchain\",\n    pod=~\"coordinador-.*\",\n    container=\"coordinador\",\n    image!=\"\"\n  }[5m])\n)\n\n\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Workers deseados por dificultad",
+      "title": "CPU del coordinador en milicores",
       "type": "timeseries"
     },
     {
@@ -471,7 +471,7 @@
         "x": 0,
         "y": 16
       },
-      "id": 21,
+      "id": 23,
       "options": {
         "legend": {
           "calcs": [],
@@ -491,14 +491,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum(rate(coordinador_cycles_total{job=\"coordinador\",event=\"completed\"}[15m])) * 3600\n",
+          "expr": "mining_workers_desired{job=\"coordinador\"}\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Ciclos completados por hora",
+      "title": "Workers deseados por dificultad",
       "type": "timeseries"
     },
     {
@@ -663,7 +663,7 @@
         "x": 0,
         "y": 24
       },
-      "id": 19,
+      "id": 21,
       "options": {
         "legend": {
           "calcs": [],
@@ -683,14 +683,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "coordinador_pending_queue_size{job=\"coordinador\"}\n+\ncoordinador_active_queue_size{job=\"coordinador\"}\n",
+          "expr": "sum(rate(coordinador_cycles_total{job=\"coordinador\",event=\"completed\"}[15m])) * 3600\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Total, pendientes + activas",
+      "title": "Ciclos completados por hora",
       "type": "timeseries"
     },
     {
@@ -786,7 +786,7 @@
           "refId": "A"
         }
       ],
-      "title": "Cadenas recibidas en el ciclo actual",
+      "title": "Mensajes enviados de mineros al endpoint de resultados",
       "type": "timeseries"
     },
     {
@@ -855,7 +855,7 @@
         "x": 0,
         "y": 32
       },
-      "id": 17,
+      "id": 19,
       "options": {
         "legend": {
           "calcs": [],
@@ -875,14 +875,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "coordinador_active_queue_size{job=\"coordinador\"}\n",
+          "expr": "coordinador_pending_queue_size{job=\"coordinador\"}\n+\ncoordinador_active_queue_size{job=\"coordinador\"}\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Cola activa actual",
+      "title": "Total, pendientes + activas",
       "type": "timeseries"
     },
     {
@@ -1047,7 +1047,7 @@
         "x": 0,
         "y": 40
       },
-      "id": 15,
+      "id": 17,
       "options": {
         "legend": {
           "calcs": [],
@@ -1067,14 +1067,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by (prefix) (\n  rate(coordinador_mining_duration_seconds_sum{job=\"coordinador\"}[$__rate_interval])\n)\n/\nclamp_min(\n  sum by (prefix) (\n    rate(coordinador_mining_duration_seconds_count{job=\"coordinador\"}[$__rate_interval])\n  ),\n  1e-9\n)\n",
+          "expr": "coordinador_active_queue_size{job=\"coordinador\"}\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Promedio minado por prefijo",
+      "title": "Cola activa actual",
       "type": "timeseries"
     },
     {
@@ -1239,7 +1239,7 @@
         "x": 0,
         "y": 48
       },
-      "id": 13,
+      "id": 15,
       "options": {
         "legend": {
           "calcs": [],
@@ -1259,14 +1259,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by (status) (\n  rate(coordinador_block_validation_duration_seconds_sum{job=\"coordinador\"}[$__rate_interval])\n)\n/\nclamp_min(\n  sum by (status) (\n    rate(coordinador_block_validation_duration_seconds_count{job=\"coordinador\"}[$__rate_interval])\n  ),\n  1e-9\n)\n",
+          "expr": "sum by (prefix) (\n  rate(coordinador_mining_duration_seconds_sum{job=\"coordinador\"}[$__rate_interval])\n)\n/\nclamp_min(\n  sum by (prefix) (\n    rate(coordinador_mining_duration_seconds_count{job=\"coordinador\"}[$__rate_interval])\n  ),\n  1e-9\n)\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Latencia promedio de validación por status",
+      "title": "Promedio minado por prefijo",
       "type": "timeseries"
     },
     {
@@ -1431,7 +1431,7 @@
         "x": 0,
         "y": 56
       },
-      "id": 11,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": [],
@@ -1451,14 +1451,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by (status) (\n  rate(coordinador_results_total{job=\"coordinador\",status!=\"accepted\"}[$__rate_interval])\n)\n",
+          "expr": "sum by (status) (\n  rate(coordinador_block_validation_duration_seconds_sum{job=\"coordinador\"}[$__rate_interval])\n)\n/\nclamp_min(\n  sum by (status) (\n    rate(coordinador_block_validation_duration_seconds_count{job=\"coordinador\"}[$__rate_interval])\n  ),\n  1e-9\n)\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Rechazos de resultados por stacked",
+      "title": "Latencia promedio de validación por status",
       "type": "timeseries"
     },
     {
@@ -1623,7 +1623,7 @@
         "x": 0,
         "y": 64
       },
-      "id": 9,
+      "id": 11,
       "options": {
         "legend": {
           "calcs": [],
@@ -1643,14 +1643,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum(rate(coordinador_results_total{job=\"coordinador\"}[$__rate_interval]))\n",
+          "expr": "sum by (status) (\n  rate(coordinador_results_total{job=\"coordinador\",status!=\"accepted\"}[$__rate_interval])\n)\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Ingreso total de resultados de minado",
+      "title": "Rechazos de resultados por stacked",
       "type": "timeseries"
     },
     {
@@ -1815,7 +1815,7 @@
         "x": 0,
         "y": 72
       },
-      "id": 7,
+      "id": 9,
       "options": {
         "legend": {
           "calcs": [],
@@ -1835,14 +1835,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "100 *\nsum(rate(coordinador_tx_submitted_total{job=\"coordinador\",status=\"accepted\"}[$__rate_interval]))\n/\nclamp_min(sum(rate(coordinador_tx_submitted_total{job=\"coordinador\"}[$__rate_interval])), 1e-9)\n",
+          "expr": "sum(rate(coordinador_results_total{job=\"coordinador\"}[$__rate_interval]))\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Tasa de aceptación de transacciones",
+      "title": "Ingreso total de resultados de minado",
       "type": "timeseries"
     },
     {
@@ -1946,7 +1946,6 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1956,7 +1955,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Tiempo/Segundos",
+            "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -2008,7 +2007,7 @@
         "x": 0,
         "y": 80
       },
-      "id": 5,
+      "id": 7,
       "options": {
         "legend": {
           "calcs": [],
@@ -2028,14 +2027,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by (prefix) (rate(coordinador_mining_duration_seconds_sum[5m]))\n/\nsum by (prefix) (rate(coordinador_mining_duration_seconds_count[5m]))",
+          "expr": "100 *\nsum(rate(coordinador_tx_submitted_total{job=\"coordinador\",status=\"accepted\"}[$__rate_interval]))\n/\nclamp_min(sum(rate(coordinador_tx_submitted_total{job=\"coordinador\"}[$__rate_interval])), 1e-9)\n",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Tiempo de minado por transaccion calculado por coordinador",
+      "title": "Tasa de aceptación de transacciones",
       "type": "timeseries"
     },
     {
@@ -2124,7 +2123,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by (prefix) (rate(coordinador_block_validation_duration_seconds_sum{status=\"accepted\"}[5m]))\n/\nsum by (prefix) (rate(coordinador_block_validation_duration_seconds_count{status=\"accepted\"}[5m]))",
+          "expr": "sum (rate(coordinador_block_validation_duration_seconds_sum{status=\"accepted\"}[5m]))\n/\nsum (rate(coordinador_block_validation_duration_seconds_count{status=\"accepted\"}[5m]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -2135,8 +2134,64 @@
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Tiempo/Segundos",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -2144,32 +2199,35 @@
         "x": 0,
         "y": 88
       },
-      "id": 2,
+      "id": 5,
       "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": false,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
-          "editorMode": "builder",
-          "expr": "{job=\"blockchain/coordinador\"} |= ``",
-          "queryType": "range",
+          "editorMode": "code",
+          "expr": "sum by (prefix) (rate(coordinador_mining_duration_seconds_sum[5m]))\n/\nsum by (prefix) (rate(coordinador_mining_duration_seconds_count[5m]))",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "New Panel",
-      "transformations": [],
-      "type": "logs"
+      "title": "Tiempo de minado por transaccion calculado por coordinador",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -2264,22 +2322,60 @@
       ],
       "title": "Porcentaje de transacciones minadas por ciclo",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 96
+      },
+      "id": 2,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "editorMode": "builder",
+          "expr": "{job=\"blockchain/coordinador\"} |= ``",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "New Panel",
+      "transformations": [],
+      "type": "logs"
     }
   ],
-  "refresh": "",
+  "refresh": false,
   "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-1h",
-    "to": "now"
+    "from": "2026-02-26T23:12:05.448Z",
+    "to": "2026-02-26T23:22:05.448Z"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Dashboard Ejemplo 2",
-  "uid": "ce72dd15-aa2e-4a4a-a8b6-7761aaaedb63",
-  "version": 1,
+  "title": "Dashboard Ejemplo 3",
+  "uid": "ce72dd15-aa2e-4a4a-a8b6-7761aaaedb60",
+  "version": 2,
   "weekStart": ""
 }

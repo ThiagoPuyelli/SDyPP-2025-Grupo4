@@ -73,6 +73,16 @@ function formatAmountForSignature(amount: number): string {
     return `${mantissa}e${sign}${digits}`;
 }
 
+function normalizePem(rawValue: string): string {
+    const normalized = rawValue.replace(/\r\n/g, "\n").trim();
+    if (!normalized) {
+        return "";
+    }
+    // El backend compara keys por igualdad exacta de string.
+    // Mantener newline final evita mismatch con claves persistidas (ej: génesis).
+    return `${normalized}\n`;
+}
+
 function delay(ms: number): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
@@ -160,15 +170,15 @@ export default function Transaccion() {
             setError(null);
             setSuccess(null);
 
-            const sourceClean = source.trim();
-            const targetClean = target.trim();
-            const privateKeyClean = privateKey.trim();
+            const sourceNormalized = normalizePem(source);
+            const targetNormalized = normalizePem(target);
+            const privateKeyNormalized = normalizePem(privateKey);
 
-            if (!sourceClean || !targetClean || !privateKeyClean) {
+            if (!sourceNormalized || !targetNormalized || !privateKeyNormalized) {
                 throw new Error("Completá source, target y private key");
             }
 
-            if (sourceClean === targetClean) {
+            if (sourceNormalized === targetNormalized) {
                 throw new Error("Source y target no pueden ser iguales");
             }
 
@@ -189,12 +199,12 @@ export default function Transaccion() {
             for (let i = 0; i < quantity; i++) {
                 const txDate = new Date(baseDate.getTime() + i * stepSeconds * 1000);
                 const timestamp = txDate.toISOString();
-                const message = `${sourceClean}|${targetClean}|${amountForSignature}|${timestamp}`;
-                const signature = await signMessage(privateKeyClean, message);
+                const message = `${sourceNormalized}|${targetNormalized}|${amountForSignature}|${timestamp}`;
+                const signature = await signMessage(privateKeyNormalized, message);
 
                 transactions.push({
-                    source: sourceClean,
-                    target: targetClean,
+                    source: sourceNormalized,
+                    target: targetNormalized,
                     amount: amountNumber,
                     timestamp,
                     sign: signature,
