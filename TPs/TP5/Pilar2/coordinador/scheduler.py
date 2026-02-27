@@ -59,9 +59,12 @@ def scheduler():
 
         elif (state.cicle_state == CoordinatorState.OPEN_TO_RESULTS and 
         proximo_estado != CoordinatorState.OPEN_TO_RESULTS):
-            handle_selecting_winner()
-            record_cycle("completed")
-            logger.info("### Fin de ciclo ###\n")
+            if try_acquire_cycle_lock():
+                handle_selecting_winner()
+                record_cycle("completed")
+                logger.info("### Fin de ciclo ###\n")
+            else:
+                logger.info(f"Otra replica ya está manejando el cierre del ciclo...")
             state.cicle_state = CoordinatorState.GIVING_TASKS
             logger.info(f"[STATE] {state.cicle_state.name}")
         time.sleep(1)
@@ -208,3 +211,11 @@ def handle_selecting_winner():
         },
     }
     state.persistent_state.set_last_cycle_summary(cycle_summary)
+
+def try_acquire_cycle_lock(ttl: int = 45) -> bool:
+    return state.redis_client.set(
+        "cycle_lock",
+        "locked",
+        nx=True,
+        ex=ttl
+    )
