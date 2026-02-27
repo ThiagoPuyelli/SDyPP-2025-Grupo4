@@ -44,7 +44,7 @@ spec:
             medium: Memory
       containers:
         - name: frontend
-          image: matiasherrneder/blockchain-frontend:7c49734
+          image: matiasherrneder/blockchain-frontend:da1423a
           # Container-level security
           securityContext:
             allowPrivilegeEscalation: false
